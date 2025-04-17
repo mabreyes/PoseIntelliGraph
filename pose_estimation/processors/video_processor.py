@@ -97,7 +97,11 @@ class VideoProcessor:
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        # The cv2.VideoWriter_fourcc function is dynamically defined by OpenCV
+        # Use getattr to access it for type checker compatibility
+        fourcc_func = cv2.VideoWriter_fourcc
+        fourcc = fourcc_func(*"mp4v")
+
         return cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
     def _process_frames(
@@ -125,7 +129,7 @@ class VideoProcessor:
                 break
 
             # Process the frame
-            processed_frame, _ = self.frame_processor.process(frame)
+            processed_frame = self.frame_processor.process_frame(frame)
 
             # Write to output video
             if out:

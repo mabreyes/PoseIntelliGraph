@@ -1,7 +1,7 @@
 """
 Frame processor for pose estimation
 """
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -11,93 +11,153 @@ from pose_estimation.models.openpose import OpenPoseModel
 
 class FrameProcessor:
     """
-    Process frames for pose estimation
+    Frame processor for pose estimation
 
-    Responsible for processing individual frames to detect and visualize poses
+    Handles processing and visualizing frames
     """
 
     def __init__(self, model: OpenPoseModel):
         """
-        Initialize the frame processor
+        Initialize the frame processor with model
 
         Args:
-            model: OpenPose model for pose detection
+            model: OpenPose model
         """
         self.model = model
+        self.colors = self._get_colors()
 
-    def process(
-        self, frame: np.ndarray
-    ) -> Tuple[np.ndarray, List[Optional[Tuple[int, int]]]]:
+    def _get_colors(self) -> Dict[str, Tuple[int, int, int]]:
+        """Get limb colors for visualization"""
+        colors = {
+            # Torso
+            "Neck-RShoulder": (0, 255, 0),  # Green
+            "Neck-LShoulder": (0, 255, 0),  # Green
+            "Neck-RHip": (0, 255, 0),  # Green
+            "Neck-LHip": (0, 255, 0),  # Green
+            "RHip-LHip": (0, 255, 0),  # Green
+            # Right arm
+            "RShoulder-RElbow": (255, 0, 0),  # Blue
+            "RElbow-RWrist": (255, 0, 0),  # Blue
+            # Left arm
+            "LShoulder-LElbow": (0, 0, 255),  # Red
+            "LElbow-LWrist": (0, 0, 255),  # Red
+            # Right leg
+            "RHip-RKnee": (255, 255, 0),  # Yellow
+            "RKnee-RAnkle": (255, 255, 0),  # Yellow
+            # Left leg
+            "LHip-LKnee": (255, 0, 255),  # Magenta
+            "LKnee-LAnkle": (255, 0, 255),  # Magenta
+            # Face
+            "Neck-Nose": (0, 255, 255),  # Cyan
+            "Nose-REye": (0, 255, 255),  # Cyan
+            "REye-REar": (0, 255, 255),  # Cyan
+            "Nose-LEye": (0, 255, 255),  # Cyan
+            "LEye-LEar": (0, 255, 255),  # Cyan
+        }
+        return colors
+
+    def process_frame(self, frame: np.ndarray) -> np.ndarray:
         """
-        Process a single frame to detect poses
+        Process a frame with the model
 
         Args:
             frame: Input frame
 
         Returns:
-            Tuple containing:
-                - Processed frame with visualized pose
-                - List of detected keypoints
+            Processed frame with pose overlay
         """
-        # Prepare input blob
-        input_blob = self.model.prepare_input(frame)
+        processed_frame = frame.copy()
 
-        # Set input to the network
+        # Prepare the frame for model input
+        blob = self.model.prepare_input(frame)
+
+        # Run the model
         if self.model.net is None:
-            raise ValueError("Model network not initialized")
+            raise ValueError("OpenPose model network is not initialized")
 
-        self.model.net.setInput(input_blob)
-
-        # Forward pass through the network
+        self.model.net.setInput(blob)
         output = self.model.net.forward()
 
-        # Get keypoints from the output
-        points = self.model.process_output(output, frame.shape)
+        # Get the keypoints from the model output
+        all_keypoints = self.model.process_output(output, frame.shape[:2])
 
-        # Draw the keypoints and connections
-        result_frame = self.visualize_pose(frame.copy(), points)
+        # Draw the keypoints and connections on the frame
+        processed_frame = self.draw_poses(processed_frame, all_keypoints)
 
-        return result_frame, points
+        return processed_frame
 
-    def visualize_pose(
-        self, frame: np.ndarray, points: List[Optional[Tuple[int, int]]]
+    def draw_poses(
+        self, frame: np.ndarray, all_keypoints: List[List[Optional[Tuple[int, int]]]]
     ) -> np.ndarray:
         """
-        Draw the detected pose on the frame
+        Draw detected poses on the frame
 
         Args:
             frame: Original frame
-            points: List of detected keypoints
+            all_keypoints: List of keypoints for all detected people
 
         Returns:
-            Frame with visualized pose
+            Frame with pose overlay
         """
-        # Colors for visualization - BGR format
-        colors = [
-            (0, 0, 255),  # Red
-            (0, 255, 0),  # Green
-            (255, 0, 0),  # Blue
-            (0, 255, 255),  # Yellow
-            (255, 0, 255),  # Magenta
-            (255, 255, 0),  # Cyan
-        ]
+        result_frame = frame.copy()
 
-        # Draw the connections between keypoints
-        for i, pair in enumerate(self.model.pose_pairs):
-            part_from = pair[0]
-            part_to = pair[1]
+        # Draw each person
+        for person_keypoints in all_keypoints:
+            # Draw connections first (so they're behind points)
+            self._draw_connections(result_frame, person_keypoints)
 
-            id_from = self.model.body_parts[part_from]
-            id_to = self.model.body_parts[part_to]
+            # Then draw keypoints on top
+            self._draw_keypoints(result_frame, person_keypoints)
 
-            if points[id_from] and points[id_to]:
-                color_idx = i % len(colors)
-                cv2.line(frame, points[id_from], points[id_to], colors[color_idx], 3)
-                cv2.ellipse(
-                    frame, points[id_from], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED
+        return result_frame
+
+    def _draw_keypoints(
+        self, frame: np.ndarray, keypoints: List[Optional[Tuple[int, int]]]
+    ) -> None:
+        """
+        Draw keypoints on the frame
+
+        Args:
+            frame: Frame to draw on
+            keypoints: List of keypoints
+        """
+        for _i, keypoint in enumerate(keypoints):
+            if keypoint is not None:
+                cv2.circle(
+                    frame, keypoint, 5, (0, 255, 255), thickness=-1, lineType=cv2.FILLED
                 )
-                cv2.ellipse(
-                    frame, points[id_to], (3, 3), 0, 0, 360, (0, 0, 255), cv2.FILLED
-                )
 
-        return frame
+    def _draw_connections(
+        self, frame: np.ndarray, keypoints: List[Optional[Tuple[int, int]]]
+    ) -> None:
+        """
+        Draw connections between keypoints
+
+        Args:
+            frame: Frame to draw on
+            keypoints: List of keypoints
+        """
+        for pair in self.model.pose_pairs:
+            part_a, part_b = pair
+            part_a_idx = self.model.body_parts[part_a]
+            part_b_idx = self.model.body_parts[part_b]
+
+            if (
+                part_a_idx < len(keypoints)
+                and part_b_idx < len(keypoints)
+                and keypoints[part_a_idx] is not None
+                and keypoints[part_b_idx] is not None
+            ):
+                # Get color for this limb
+                limb_key = f"{part_a}-{part_b}"
+                color = self.colors.get(
+                    limb_key, (255, 255, 255)
+                )  # Default white if not found
+
+                cv2.line(
+                    frame,
+                    keypoints[part_a_idx],  # type: ignore
+                    keypoints[part_b_idx],  # type: ignore
+                    color,
+                    2,
+                )
