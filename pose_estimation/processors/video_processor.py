@@ -1,6 +1,7 @@
 """
 Video processor for pose estimation
 """
+import os
 from typing import Optional, Union
 
 import cv2
@@ -40,6 +41,12 @@ class VideoProcessor:
             output_path: Path to output video file
             display: Whether to display output while processing
         """
+        # Ensure the output directory exists if output_path is specified
+        if output_path:
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+
         # Open video or camera
         cap = self._open_video_capture(input_path)
         if cap is None:
@@ -141,10 +148,10 @@ class VideoProcessor:
 
                 # Progress info for video files
                 if input_path != "camera" and input_path != 0:
-                    print(f"Processing: {frame_idx}/{frame_count} frames", end="\r")
+                    print(f"Processing: {frame_idx+1}/{frame_count} frames", end="\r")
 
             # Break on 'q' key press
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            if display and (cv2.waitKey(1) & 0xFF == ord("q")):
                 break
 
             frame_idx += 1

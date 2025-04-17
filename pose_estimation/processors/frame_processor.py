@@ -1,7 +1,7 @@
 """
 Frame processor for pose estimation
 """
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 import cv2
 import numpy as np
@@ -18,10 +18,10 @@ class FrameProcessor:
 
     def __init__(self, model: OpenPoseModel):
         """
-        Initialize the frame processor with model
+        Initialize the frame processor with OpenPose model
 
         Args:
-            model: OpenPose model
+            model: OpenPoseModel instance
         """
         self.model = model
         self.colors = self._get_colors()
@@ -58,7 +58,7 @@ class FrameProcessor:
 
     def process_frame(self, frame: np.ndarray) -> np.ndarray:
         """
-        Process a frame with the model
+        Process a frame with the OpenPose model
 
         Args:
             frame: Input frame
@@ -68,21 +68,25 @@ class FrameProcessor:
         """
         processed_frame = frame.copy()
 
-        # Prepare the frame for model input
-        blob = self.model.prepare_input(frame)
+        # Prepare input blob for the model
+        input_blob = self.model.prepare_input(frame)
 
-        # Run the model
+        # Check if the neural network is initialized
         if self.model.net is None:
             raise ValueError("OpenPose model network is not initialized")
 
-        self.model.net.setInput(blob)
-        output = self.model.net.forward()
+        # Use cast to help mypy understand that net is not None
+        net = cast(cv2.dnn.Net, self.model.net)
 
-        # Get the keypoints from the model output
-        all_keypoints = self.model.process_output(output, frame.shape[:2])
+        # Run model inference
+        net.setInput(input_blob)
+        output = net.forward()
 
-        # Draw the keypoints and connections on the frame
-        processed_frame = self.draw_poses(processed_frame, all_keypoints)
+        # Process output to get keypoints
+        keypoints = self.model.process_output(output, frame.shape[:2])
+
+        # Draw the keypoints on the frame
+        processed_frame = self.draw_poses(processed_frame, keypoints)
 
         return processed_frame
 
@@ -154,10 +158,11 @@ class FrameProcessor:
                     limb_key, (255, 255, 255)
                 )  # Default white if not found
 
+                # Draw the connection line
                 cv2.line(
                     frame,
-                    keypoints[part_a_idx],  # type: ignore
-                    keypoints[part_b_idx],  # type: ignore
+                    keypoints[part_a_idx],
+                    keypoints[part_b_idx],
                     color,
-                    2,
+                    thickness=2,
                 )

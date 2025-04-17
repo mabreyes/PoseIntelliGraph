@@ -71,3 +71,5 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+samples_*/
