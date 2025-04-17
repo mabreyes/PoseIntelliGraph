@@ -18,6 +18,8 @@ dev = [
     "black",
     "isort",
     "mypy",
+    "pre-commit",
+    "ruff",
 ]
 
 [tool.black]
@@ -27,4 +29,17 @@ line-length = 88
 profile = "black"
 
 [tool.hatch.build.targets.wheel]
-packages = ["."] 
+packages = ["."]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = ["E", "F", "I", "UP", "N", "W", "B", "C4"]
+ignore = ["E203"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
