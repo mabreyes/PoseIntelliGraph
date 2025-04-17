@@ -4,10 +4,12 @@ A Pythonic application that performs pose estimation on videos using OpenPose, f
 
 ## Features
 
-- Process video files or live camera feed
+- Process individual video files or live camera feed
+- Process all video files in a directory automatically
 - Detect human poses using OpenPose
 - Visualize pose keypoints and connections
-- Save processed video with pose estimation overlay
+- Save processed videos with pose estimation overlay
+- Automatic output directory creation for batch processing
 - Modular architecture following Single Responsibility Principle
 - Type annotations and comprehensive documentation
 - Code quality ensured with pre-commit hooks
@@ -16,22 +18,23 @@ A Pythonic application that performs pose estimation on videos using OpenPose, f
 
 ```
 pose-estimation/
-├── main.py                      # Simple entry point
-├── pose_estimation/             # Package directory
-│   ├── __init__.py              # Package initialization
-│   ├── cli.py                   # Command-line interface
-│   ├── models/                  # Model-related modules
+├── main.py                            # Simple entry point
+├── pose_estimation/                   # Package directory
+│   ├── __init__.py                    # Package initialization
+│   ├── cli.py                         # Command-line interface
+│   ├── models/                        # Model-related modules
 │   │   ├── __init__.py
-│   │   └── openpose.py          # OpenPose model handling
-│   ├── processors/              # Processing modules
+│   │   └── openpose.py                # OpenPose model handling
+│   ├── processors/                    # Processing modules
 │   │   ├── __init__.py
-│   │   ├── frame_processor.py   # Frame processing
-│   │   └── video_processor.py   # Video processing
-│   └── utils/                   # Utility functions
+│   │   ├── directory_processor.py     # Directory batch processing
+│   │   ├── frame_processor.py         # Frame processing
+│   │   └── video_processor.py         # Video processing
+│   └── utils/                         # Utility functions
 │       └── __init__.py
-├── pyproject.toml               # Project metadata and dependencies
-├── requirements.lock            # Locked dependencies
-└── Makefile                     # Project automation
+├── pyproject.toml                     # Project metadata and dependencies
+├── requirements.lock                  # Locked dependencies
+└── Makefile                           # Project automation
 ```
 
 ## Requirements
@@ -79,11 +82,11 @@ pose-estimation [input] [options]
 
 ### Arguments
 
-- `input`: Path to input video file or "camera" to use webcam
+- `input`: Path to input video file, directory containing videos, or "camera" to use webcam
 
 ### Options
 
-- `-o, --output`: Path to output video file
+- `-o, --output`: Path to output video file (required for single video input)
 - `-m, --model-path`: Path to OpenPose model directory
 - `-nd, --no-display`: Don't display output while processing
 
@@ -93,6 +96,12 @@ Process a video file and save the result:
 ```
 python main.py path/to/video.mp4 -o output.mp4
 ```
+
+Process all videos in a directory:
+```
+python main.py path/to/videos_directory
+```
+This will automatically create an output directory called `path/to/videos_directory_openpose` with all processed videos.
 
 Use webcam as input:
 ```
@@ -122,6 +131,9 @@ make run-sample
 # Run on video with multiple people
 make run-multi
 
+# Process all videos in the samples directory
+make run-directory
+
 # Use webcam
 make run-webcam
 
@@ -148,7 +160,8 @@ The application uses a modular architecture:
 1. **OpenPoseModel** - Loads the model and handles keypoint detection
 2. **FrameProcessor** - Processes individual frames for pose estimation
 3. **VideoProcessor** - Manages video sources and outputs
-4. **CLI** - Provides the command-line interface
+4. **DirectoryProcessor** - Batch processes all videos in a directory
+5. **CLI** - Provides the command-line interface
 
 The application follows the Single Responsibility Principle, with each class having a single, well-defined responsibility.
 

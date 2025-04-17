@@ -1,4 +1,4 @@
-.PHONY: setup install run-sample run-webcam clean format help pre-commit pre-commit-install pre-commit-all
+.PHONY: setup install run-sample run-webcam run-directory clean format help pre-commit pre-commit-install pre-commit-all
 
 PYTHON = python3
 UV = uv
@@ -8,6 +8,8 @@ SAMPLE_VIDEO = samples/sample_video.mp4
 SAMPLE_OUTPUT = samples/output_video.mp4
 MULTI_PEOPLE_VIDEO = samples/multiple_people.mp4
 MULTI_PEOPLE_OUTPUT = samples/output_multiple_people.mp4
+SAMPLE_DIR = samples
+SAMPLE_DIR_OUTPUT = samples_openpose
 
 help:
 	@echo "Pose Estimation Project Makefile"
@@ -18,6 +20,7 @@ help:
 	@echo "  make prepare-models  - Download required models"
 	@echo "  make run-sample      - Run pose estimation on sample video"
 	@echo "  make run-multi       - Run pose estimation on multiple people video"
+	@echo "  make run-directory   - Run pose estimation on all videos in a directory"
 	@echo "  make run-webcam      - Run pose estimation on webcam feed"
 	@echo "  make clean           - Remove generated files and cache"
 	@echo "  make format          - Format code with black (if installed)"
@@ -58,12 +61,16 @@ run-sample:
 run-multi:
 	$(PYTHON) main.py $(MULTI_PEOPLE_VIDEO) -o $(MULTI_PEOPLE_OUTPUT)
 
+run-directory:
+	$(PYTHON) main.py $(SAMPLE_DIR)
+
 run-webcam:
 	$(PYTHON) main.py camera
 
 clean:
 	@echo "Cleaning generated files..."
 	rm -rf samples/output_*.mp4
+	rm -rf $(SAMPLE_DIR_OUTPUT)
 	rm -rf __pycache__/
 	rm -rf *.egg-info/
 	rm -rf build/ dist/
@@ -77,7 +84,7 @@ clean-all: clean
 
 format:
 	@echo "Formatting code with black..."
-	black *.py
+	black *.py pose_estimation
 	@echo "Code formatted successfully!"
 
 pre-commit-install:
