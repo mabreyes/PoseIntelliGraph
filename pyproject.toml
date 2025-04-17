@@ -13,6 +13,9 @@ dependencies = [
     "opencv-contrib-python",
 ]
 
+[project.scripts]
+pose-estimation = "pose_estimation.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "black",
@@ -35,7 +38,6 @@ packages = ["."]
 line-length = 88
 target-version = "py38"
 select = ["E", "F", "I", "UP", "N", "W", "B", "C4"]
-ignore = ["E203"]
 
 [tool.mypy]
 python_version = "3.8"

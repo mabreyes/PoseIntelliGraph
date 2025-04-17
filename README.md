@@ -72,4 +72,4 @@ The application uses OpenPose, which is a real-time multi-person keypoint detect
 
 ## License
 
-MIT 
+MIT
