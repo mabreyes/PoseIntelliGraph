@@ -3,14 +3,10 @@
 A Pythonic application that performs pose estimation on videos using OpenPose, following the Single Responsibility Principle.
 
 ## Demo
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-  <div>
-    <img src="docs/V_89_processed.gif" alt="Single person pose estimation" width="100%">
-  </div>
-  <div>
-    <img src="docs/multiple_people_processed.gif" alt="Multiple people pose estimation" width="100%">
-  </div>
-</div>
+<p float="left">
+  <img src="docs/V_89_processed.gif" alt="Single person pose estimation" width="49%" />
+  <img src="docs/multiple_people_processed.gif" alt="Multiple people pose estimation" width="49%" />
+</p>
 
 ## Features
 
