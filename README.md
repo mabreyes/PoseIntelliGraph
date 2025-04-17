@@ -2,6 +2,11 @@
 
 A Pythonic application that performs pose estimation on videos using OpenPose, following the Single Responsibility Principle.
 
+## Demo
+![Multiple person pose estimation](docs/V_89_processed.gif)
+
+![Multiple people pose estimation](docs/multiple_people_processed.gif)
+
 ## Features
 
 - Process individual video files or live camera feed
