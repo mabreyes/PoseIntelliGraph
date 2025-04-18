@@ -84,40 +84,40 @@ The system automatically selects the optimal processing device based on your har
 
 ## Visual Examples
 
-<div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between;">
-  <div style="flex: 0 0 24%; min-width: 200px;">
-    <h4 style="margin: 5px 0;">Body Skeleton</h4>
-    <img src="images/skeleton.jpg" alt="Skeleton visualization" style="width: 100%; max-height: 200px; object-fit: cover;">
+<div style="display: flex; flex-wrap: wrap; gap: 0.5%; justify-content: space-between;">
+  <div style="flex: 0 0 24%; min-width: 24%;">
+    <h4 style="margin: 1% 0; font-size: 90%;">Body Skeleton</h4>
+    <img src="images/skeleton.jpg" alt="Skeleton visualization" style="width: 100%; height: auto; object-fit: cover;">
   </div>
 
-  <div style="flex: 0 0 24%; min-width: 200px;">
-    <h4 style="margin: 5px 0;">Body Detection</h4>
-    <img src="images/body_preview.jpg" alt="Body pose detection" style="width: 100%; max-height: 200px; object-fit: cover;">
+  <div style="flex: 0 0 24%; min-width: 24%;">
+    <h4 style="margin: 1% 0; font-size: 90%;">Body Detection</h4>
+    <img src="images/body_preview.jpg" alt="Body pose detection" style="width: 100%; height: auto; object-fit: cover;">
   </div>
 
-  <div style="flex: 0 0 24%; min-width: 200px;">
-    <h4 style="margin: 5px 0;">Hand Detection</h4>
-    <img src="images/hand_preview.png" alt="Hand pose detection" style="width: 100%; max-height: 200px; object-fit: cover;">
+  <div style="flex: 0 0 24%; min-width: 24%;">
+    <h4 style="margin: 1% 0; font-size: 90%;">Hand Detection</h4>
+    <img src="images/hand_preview.png" alt="Hand pose detection" style="width: 100%; height: auto; object-fit: cover;">
   </div>
 
-  <div style="flex: 0 0 24%; min-width: 200px;">
-    <h4 style="margin: 5px 0;">Combined</h4>
-    <img src="images/demo_preview.png" alt="Combined detection" style="width: 100%; max-height: 200px; object-fit: cover;">
+  <div style="flex: 0 0 24%; min-width: 24%;">
+    <h4 style="margin: 1% 0; font-size: 90%;">Combined</h4>
+    <img src="images/demo_preview.png" alt="Combined detection" style="width: 100%; height: auto; object-fit: cover;">
   </div>
 </div>
 
 ### Video Processing Examples
 
-<div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; margin-top: 10px;">
-  <div style="flex: 0 0 49%; min-width: 250px;">
-    <h4 style="margin: 5px 0;">Body Pose Tracking</h4>
-    <img src="images/kc-e129SBb4-sample.processed.gif" alt="Body pose in video" style="width: 100%; max-height: 250px; object-fit: cover;">
-    <p style="margin: 3px 0; font-size: 12px;"><em>Source: <a href="https://www.youtube.com/watch?v=kc-e129SBb4">YouTube video</a></em></p>
+<div style="display: flex; flex-wrap: wrap; gap: 1%; justify-content: space-between; margin-top: 1%;">
+  <div style="flex: 0 0 49%; min-width: 49%;">
+    <h4 style="margin: 1% 0; font-size: 90%;">Body Pose Tracking</h4>
+    <img src="images/kc-e129SBb4-sample.processed.gif" alt="Body pose in video" style="width: 100%; height: auto; object-fit: cover;">
+    <p style="margin: 0.5% 0; font-size: 80%;"><em>Source: <a href="https://www.youtube.com/watch?v=kc-e129SBb4">YouTube video</a></em></p>
   </div>
 
-  <div style="flex: 0 0 49%; min-width: 250px;">
-    <h4 style="margin: 5px 0;">Hand Tracking</h4>
-    <img src="images/yOAmYSW3WyU-sample.small.processed.gif" alt="Hand tracking in video" style="width: 100%; max-height: 250px; object-fit: cover;">
-    <p style="margin: 3px 0; font-size: 12px;"><em>Source: <a href="https://www.youtube.com/watch?v=yOAmYSW3WyU">YouTube video</a></em></p>
+  <div style="flex: 0 0 49%; min-width: 49%;">
+    <h4 style="margin: 1% 0; font-size: 90%;">Hand Tracking</h4>
+    <img src="images/yOAmYSW3WyU-sample.small.processed.gif" alt="Hand tracking in video" style="width: 100%; height: auto; object-fit: cover;">
+    <p style="margin: 0.5% 0; font-size: 80%;"><em>Source: <a href="https://www.youtube.com/watch?v=yOAmYSW3WyU">YouTube video</a></em></p>
   </div>
 </div>
