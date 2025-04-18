@@ -12,9 +12,11 @@ class Hand(object):
     def __init__(self, model_path):
         self.model = handpose_model()
         # Check if CUDA is available before using it
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model.to(self.device)
-        model_dict = util.transfer(self.model, torch.load(model_path, map_location=self.device))
+        model_dict = util.transfer(
+            self.model, torch.load(model_path, map_location=self.device)
+        )
         self.model.load_state_dict(model_dict)
         self.model.eval()
 
