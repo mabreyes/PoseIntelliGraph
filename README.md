@@ -1,193 +1,119 @@
-# Video Pose Estimation
+## pytorch-openpose
 
-A Pythonic application that performs pose estimation on videos using OpenPose, following the Single Responsibility Principle.
+pytorch implementation of [openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) including **Body and Hand Pose Estimation**, and the pytorch model is directly converted from [openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) caffemodel by [caffemodel2pytorch](https://github.com/vadimkantorov/caffemodel2pytorch). You could implement face keypoint detection in the same way if you are interested in. Pay attention to that the face keypoint detector was trained using the procedure described in [Simon et al. 2017] for hands.
 
-## Demo
-![Multiple person pose estimation](docs/V_89_processed.gif)
-
-![Multiple people pose estimation](docs/multiple_people_processed.gif)
-
-## Features
-
-- Process individual video files or live camera feed
-- Process all video files in a directory automatically
-- Detect human poses using OpenPose
-- Visualize pose keypoints and connections
-- Save processed videos with pose estimation overlay
-- Automatic output directory creation for batch processing
-- Modular architecture following Single Responsibility Principle
-- Type annotations and comprehensive documentation
-- Code quality ensured with pre-commit hooks
-
-## Project Structure
-
+openpose detects hand by the result of body pose estimation, please refer to the code of [handDetector.cpp](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/src/openpose/hand/handDetector.cpp).
+In the paper, it states as:
 ```
-pose-estimation/
-├── main.py                            # Simple entry point
-├── pose_estimation/                   # Package directory
-│   ├── __init__.py                    # Package initialization
-│   ├── cli.py                         # Command-line interface
-│   ├── models/                        # Model-related modules
-│   │   ├── __init__.py
-│   │   └── openpose.py                # OpenPose model handling
-│   ├── processors/                    # Processing modules
-│   │   ├── __init__.py
-│   │   ├── directory_processor.py     # Directory batch processing
-│   │   ├── frame_processor.py         # Frame processing
-│   │   └── video_processor.py         # Video processing
-│   └── utils/                         # Utility functions
-│       └── __init__.py
-├── pyproject.toml                     # Project metadata and dependencies
-├── requirements.lock                  # Locked dependencies
-└── Makefile                           # Project automation
+This is an important detail: to use the keypoint detector in any practical situation,
+we need a way to generate this bounding box.
+We directly use the body pose estimation models from [29] and [4],
+and use the wrist and elbow position to approximate the hand location,
+assuming the hand extends 0.15 times the length of the forearm in the same direction.
 ```
 
-## Requirements
+If anybody wants a pure python wrapper, please refer to my [pytorch implementation](https://github.com/Hzzone/pytorch-openpose) of openpose, maybe it helps you to implement a standalone hand keypoint detector.
 
-This project uses `uv` from Astral.sh for dependency management instead of pip.
+Don't be mean to star this repo if it helps your research.
 
-## Installation
+### Getting Started
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/pose-estimation.git
-   cd pose-estimation
-   ```
+#### Install Requriements
 
-2. Install dependencies using uv:
-   ```
-   make install
-   ```
+Create a python 3.7 environement, eg:
 
-   Or manually:
-   ```
-   uv pip install -e .
-   ```
+    conda create -n pytorch-openpose python=3.7
+    conda activate pytorch-openpose
 
-3. Download the required models:
-   ```
-   make prepare-models
-   ```
+Install pytorch by following the quick start guide here (use pip) https://download.pytorch.org/whl/torch_stable.html
 
-## Usage
+Install other requirements with pip
 
-### Command Line
+    pip install -r requirements.txt
 
-Run the application from the command line:
+#### Download the Models
+
+* [dropbox](https://www.dropbox.com/sh/7xbup2qsn7vvjxo/AABWFksdlgOMXR_r5v3RwKRYa?dl=0)
+* [baiduyun](https://pan.baidu.com/s/1IlkvuSi0ocNckwbnUe7j-g)
+* [google drive](https://drive.google.com/drive/folders/1JsvI4M4ZTg98fmnCZLFM-3TeovnCRElG?usp=sharing)
+
+`*.pth` files are pytorch model, you could also download caffemodel file if you want to use caffe as backend.
+
+Download the pytorch models and put them in a directory named `model` in the project root directory
+
+#### Run the Demo
+
+Run:
+
+    python demo_camera.py
+
+to run a demo with a feed from your webcam or run
+
+    python demo.py
+
+to use a image from the images folder or run
+
+    python demo_video.py <video-file>
+
+to process a video file (requires [ffmpeg-python][ffmpeg]).
+
+[ffmpeg]: https://pypi.org/project/ffmpeg-python/
+
+### Todo list
+- [x] convert caffemodel to pytorch.
+- [x] Body Pose Estimation.
+- [x] Hand Pose Estimation.
+- [ ] Performance test.
+- [ ] Speed up.
+
+### Demo
+#### Skeleton
+
+![](images/skeleton.jpg)
+#### Body Pose Estimation
+
+![](images/body_preview.jpg)
+
+#### Hand Pose Estimation
+![](images/hand_preview.png)
+
+#### Body + Hand
+![](images/demo_preview.png)
+
+#### Video Body
+
+![](images/kc-e129SBb4-sample.processed.gif)
+
+Attribution: [this video](https://www.youtube.com/watch?v=kc-e129SBb4).
+
+#### Video Hand
+
+![](images/yOAmYSW3WyU-sample.small.processed.gif)
+
+Attribution: [this video](https://www.youtube.com/watch?v=yOAmYSW3WyU).
+
+### Citation
+Please cite these papers in your publications if it helps your research (the face keypoint detector was trained using the procedure described in [Simon et al. 2017] for hands):
 
 ```
-python main.py [input] [options]
+@inproceedings{cao2017realtime,
+  author = {Zhe Cao and Tomas Simon and Shih-En Wei and Yaser Sheikh},
+  booktitle = {CVPR},
+  title = {Realtime Multi-Person 2D Pose Estimation using Part Affinity Fields},
+  year = {2017}
+}
+
+@inproceedings{simon2017hand,
+  author = {Tomas Simon and Hanbyul Joo and Iain Matthews and Yaser Sheikh},
+  booktitle = {CVPR},
+  title = {Hand Keypoint Detection in Single Images using Multiview Bootstrapping},
+  year = {2017}
+}
+
+@inproceedings{wei2016cpm,
+  author = {Shih-En Wei and Varun Ramakrishna and Takeo Kanade and Yaser Sheikh},
+  booktitle = {CVPR},
+  title = {Convolutional pose machines},
+  year = {2016}
+}
 ```
-
-Or after installation:
-
-```
-pose-estimation [input] [options]
-```
-
-### Arguments
-
-- `input`: Path to input video file, directory containing videos, or "camera" to use webcam
-
-### Options
-
-- `-o, --output`: Path to output video file (required for single video input)
-- `-m, --model-path`: Path to OpenPose model directory
-- `-nd, --no-display`: Don't display output while processing
-
-### Examples
-
-Process a video file and save the result:
-```
-python main.py path/to/video.mp4 -o output.mp4
-```
-
-Process all videos in a directory:
-```
-python main.py path/to/videos_directory
-```
-This will automatically create an output directory called `path/to/videos_directory_openpose` with all processed videos.
-
-Use webcam as input:
-```
-python main.py camera
-```
-
-### Using the Makefile
-
-The project includes a Makefile for common tasks:
-
-```bash
-# Setup environment and install dependencies
-make setup
-
-# Install dependencies with uv
-make install
-
-# Download models
-make prepare-models
-
-# Download sample videos
-make prepare-samples
-
-# Run on sample video
-make run-sample
-
-# Run on video with multiple people
-make run-multi
-
-# Process all videos in the samples directory
-make run-directory
-
-# Use webcam
-make run-webcam
-
-# Clean generated files
-make clean
-
-# Format code
-make format
-
-# Install pre-commit hooks
-make pre-commit-install
-
-# Run pre-commit hooks on staged files
-make pre-commit
-
-# Run pre-commit hooks on all files
-make pre-commit-all
-```
-
-## How It Works
-
-The application uses a modular architecture:
-
-1. **OpenPoseModel** - Loads the model and handles keypoint detection
-2. **FrameProcessor** - Processes individual frames for pose estimation
-3. **VideoProcessor** - Manages video sources and outputs
-4. **DirectoryProcessor** - Batch processes all videos in a directory
-5. **CLI** - Provides the command-line interface
-
-The application follows the Single Responsibility Principle, with each class having a single, well-defined responsibility.
-
-## Development
-
-### Code Quality Tools
-
-This project uses several code quality tools:
-
-- **black**: Code formatting
-- **isort**: Import sorting
-- **ruff**: Fast linting
-- **mypy**: Type checking
-- **pre-commit**: Automated checks before commits
-
-To install the pre-commit hooks:
-
-```bash
-make pre-commit-install
-```
-
-## License
-
-MIT

@@ -29,6 +29,7 @@ venv/
 ENV/
 env/
 .venv/
+openpose_venv/
 
 # IDE specific files
 .idea/
@@ -45,10 +46,12 @@ Thumbs.db
 # Project specific
 # Models (large files)
 models/
+model/
 
 # Sample and output videos (large binary files)
 samples/*.mp4
 samples/output*.mp4
+videos/
 
 # Jupyter Notebook
 .ipynb_checkpoints/
@@ -73,3 +76,8 @@ wheels/
 MANIFEST
 
 samples_*/
+
+# Additional ignored files
+.mypy_cache/
+.ruff_cache/
+*.gif
