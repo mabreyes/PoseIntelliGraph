@@ -59,10 +59,23 @@ to process a video file (requires [ffmpeg-python][ffmpeg]).
 
 [ffmpeg]: https://pypi.org/project/ffmpeg-python/
 
+### Platform Compatibility
+
+This implementation supports a variety of hardware platforms:
+
+- **NVIDIA GPUs**: When CUDA is available, the model will automatically use the GPU for fastest processing
+- **Apple Silicon**: When running on M1/M2/M3 Macs, the model uses Metal Performance Shaders (MPS) for accelerated processing
+- **CPU**: On systems without GPU support, the model gracefully falls back to CPU processing
+
+No code changes are needed - the system detects your hardware configuration automatically and selects the best available device.
+
+This makes the project usable on virtually any modern machine including most laptops and desktops.
+
 ### Todo list
 - [x] convert caffemodel to pytorch.
 - [x] Body Pose Estimation.
 - [x] Hand Pose Estimation.
+- [x] CPU compatibility mode.
 - [ ] Performance test.
 - [ ] Speed up.
 

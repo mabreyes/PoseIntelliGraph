@@ -13,8 +13,17 @@ from src.model import bodypose_model
 class Body(object):
     def __init__(self, model_path):
         self.model = bodypose_model()
-        # Check if CUDA is available before using it
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Check for available devices: CUDA -> MPS -> CPU
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            print("Using CUDA device")
+        elif hasattr(torch, "mps") and torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+            print("Using MPS device (Apple Silicon GPU)")
+        else:
+            self.device = torch.device("cpu")
+            print("Using CPU device")
+
         self.model = self.model.to(self.device)
         model_dict = util.transfer(
             self.model, torch.load(model_path, map_location=self.device)
@@ -60,7 +69,6 @@ class Body(object):
             Mconv7_stage6_L2 = Mconv7_stage6_L2.cpu().numpy()
 
             # extract outputs, resize, and remove padding
-            # heatmap = np.transpose(np.squeeze(net.blobs[output_blobs.keys()[1]].data), (1, 2, 0))  # output 1 is heatmaps
             heatmap = np.transpose(
                 np.squeeze(Mconv7_stage6_L2), (1, 2, 0)
             )  # output 1 is heatmaps
@@ -78,7 +86,6 @@ class Body(object):
                 interpolation=cv2.INTER_CUBIC,
             )
 
-            # paf = np.transpose(np.squeeze(net.blobs[output_blobs.keys()[0]].data), (1, 2, 0))  # output 0 is PAFs
             paf = np.transpose(
                 np.squeeze(Mconv7_stage6_L1), (1, 2, 0)
             )  # output 0 is PAFs
@@ -333,7 +340,10 @@ class Body(object):
                 deleteIdx.append(idx)
         subset = np.delete(subset, deleteIdx, axis=0)
 
-        # subset: n*20 array, 0-17 is the index in candidate, 18 is the total score, 19 is the total parts
+        # subset: n*20 array
+        # 0-17 is the index in candidate
+        # 18 is the total score
+        # 19 is the total parts
         # candidate: x, y, score, id
         return candidate, subset
 

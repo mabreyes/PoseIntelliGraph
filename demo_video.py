@@ -44,6 +44,7 @@ def ffprobe(file_path) -> FFProbeResult:
     )
 
 
+print("Initializing models...")
 body_estimation = Body("model/body_pose_model.pth")
 hand_estimation = Hand("model/hand_pose_model.pth")
 

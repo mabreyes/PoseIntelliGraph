@@ -11,8 +11,17 @@ from src.model import handpose_model
 class Hand(object):
     def __init__(self, model_path):
         self.model = handpose_model()
-        # Check if CUDA is available before using it
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Check for available devices: CUDA -> MPS -> CPU
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            print("Using CUDA device")
+        elif hasattr(torch, "mps") and torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+            print("Using MPS device (Apple Silicon GPU)")
+        else:
+            self.device = torch.device("cpu")
+            print("Using CPU device")
+
         self.model = self.model.to(self.device)
         model_dict = util.transfer(
             self.model, torch.load(model_path, map_location=self.device)

@@ -2,20 +2,14 @@ import copy
 
 import cv2
 import numpy as np
-import torch
 
 from src import util
 from src.body import Body
 from src.hand import Hand
 
+print("Initializing models...")
 body_estimation = Body("model/body_pose_model.pth")
 hand_estimation = Hand("model/hand_pose_model.pth")
-
-# Check if CUDA is available before trying to use it
-if torch.cuda.is_available():
-    print(f"Torch device: {torch.cuda.get_device_name()}")
-else:
-    print("CUDA not available, using CPU")
 
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
@@ -38,7 +32,7 @@ while True:
 
     canvas = util.draw_handpose(canvas, all_hand_peaks)
 
-    cv2.imshow("demo", canvas)  # 一个窗口用以显示原视频
+    cv2.imshow("demo", canvas)  # Display the video feed
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
