@@ -84,20 +84,32 @@ The system automatically selects the optimal processing device based on your har
 
 ## Visual Examples
 
-### Body Keypoints
-![Skeleton visualization](images/skeleton.jpg)
-![Body pose detection](images/body_preview.jpg)
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <h3>Body Keypoints</h3>
+    <img src="images/skeleton.jpg" alt="Skeleton visualization" style="width: 100%;">
+    <img src="images/body_preview.jpg" alt="Body pose detection" style="width: 100%; margin-top: 10px;">
+  </div>
 
-### Hand Keypoints
-![Hand pose detection](images/hand_preview.png)
-
-### Combined Body and Hand Detection
-![Combined detection](images/demo_preview.png)
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <h3>Hand Keypoints</h3>
+    <img src="images/hand_preview.png" alt="Hand pose detection" style="width: 100%;">
+    <img src="images/demo_preview.png" alt="Combined detection" style="width: 100%; margin-top: 10px;">
+  </div>
+</div>
 
 ### Video Processing Examples
 
-#### Body Pose Tracking
-![Body pose in video](images/kc-e129SBb4-sample.processed.gif)
+<div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;">
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <h4>Body Pose Tracking</h4>
+    <img src="images/kc-e129SBb4-sample.processed.gif" alt="Body pose in video" style="width: 100%;">
+    <p><em>Source: <a href="https://www.youtube.com/watch?v=kc-e129SBb4">YouTube video</a></em></p>
+  </div>
 
-#### Hand Tracking
-![Hand tracking in video](images/yOAmYSW3WyU-sample.small.processed.gif)
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <h4>Hand Tracking</h4>
+    <img src="images/yOAmYSW3WyU-sample.small.processed.gif" alt="Hand tracking in video" style="width: 100%;">
+    <p><em>Source: <a href="https://www.youtube.com/watch?v=yOAmYSW3WyU">YouTube video</a></em></p>
+  </div>
+</div>
