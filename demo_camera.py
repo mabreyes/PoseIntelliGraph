@@ -11,7 +11,11 @@ from src.hand import Hand
 body_estimation = Body("model/body_pose_model.pth")
 hand_estimation = Hand("model/hand_pose_model.pth")
 
-print(f"Torch device: {torch.cuda.get_device_name()}")
+# Check if CUDA is available before trying to use it
+if torch.cuda.is_available():
+    print(f"Torch device: {torch.cuda.get_device_name()}")
+else:
+    print("CUDA not available, using CPU")
 
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
