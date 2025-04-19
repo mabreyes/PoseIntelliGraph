@@ -2,6 +2,8 @@
 
 A PyTorch implementation of the OpenPose human pose estimation system. This project provides real-time **body and hand pose detection** capabilities through models converted directly from the original [CMU OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) project using [caffemodel2pytorch](https://github.com/vadimkantorov/caffemodel2pytorch).
 
+![Sample Pose Detection](sample.gif)
+
 ## Introduction
 
 This implementation focuses on two key components:
