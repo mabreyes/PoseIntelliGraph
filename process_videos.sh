@@ -6,38 +6,6 @@
 # Exit on error
 set -e
 
-# Function to check if a video file is corrupted
-check_video_corruption() {
-    local video_file="$1"
-    # Try to get video information using ffprobe
-    if ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "$video_file" >/dev/null 2>&1; then
-        return 0 # File is not corrupted
-    else
-        return 1 # File is corrupted
-    fi
-}
-
-# Function to check if file size is reasonable
-check_file_size() {
-    local original_file="$1"
-    local processed_file="$2"
-    local min_ratio=0.1 # Processed file should be at least 10% of the original size
-
-    # Get file sizes in bytes
-    local original_size=$(stat -f%z "$original_file" 2>/dev/null || stat --format=%s "$original_file")
-    local processed_size=$(stat -f%z "$processed_file" 2>/dev/null || stat --format=%s "$processed_file")
-
-    # Calculate ratio (processed/original)
-    local ratio=$(echo "scale=2; $processed_size / $original_size" | bc -l)
-
-    # Check if ratio is at least min_ratio
-    if (( $(echo "$ratio < $min_ratio" | bc -l) )); then
-        return 1 # Size is not reasonable
-    else
-        return 0 # Size is reasonable
-    fi
-}
-
 # Check if directory argument is provided
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <directory> [options]"
@@ -45,7 +13,6 @@ if [ $# -lt 1 ]; then
     echo "  --no_hands       No hand pose detection"
     echo "  --no_body        No body pose detection"
     echo "  --percent=N      Process only N% of videos (default: 100%)"
-    echo "  --process-all    Process all videos, including ones already processed (default: skip existing)"
     exit 1
 fi
 
@@ -60,7 +27,6 @@ fi
 
 # Default values
 PERCENT=100
-SKIP_EXISTING=1  # Default is to skip existing processed videos
 
 # Parse special options for this script
 DEMO_OPTIONS=""
@@ -72,11 +38,6 @@ for arg in "$@"; do
             echo "Error: Percentage must be a number between 1 and 100"
             exit 1
         fi
-    elif [[ $arg == --process-all ]]; then
-        SKIP_EXISTING=0
-    elif [[ $arg == --skip-existing ]]; then
-        echo "Note: --skip-existing is now the default behavior. Use --process-all to process all videos."
-        SKIP_EXISTING=1
     else
         DEMO_OPTIONS="$DEMO_OPTIONS $arg"
     fi
@@ -96,37 +57,12 @@ trap 'rm -f "$TMPFILE"' EXIT  # Auto-remove temp file on exit
 find "$VIDEO_DIR" -type f | sort | while read -r file; do
     # Get the file extension (lowercase)
     filename=$(basename "$file")
-    base_name="${filename%.*}"
     ext="${filename##*.}"
     ext_lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
 
     # Check if it's in our list of video extensions
     for valid_ext in "${VIDEO_EXTENSIONS[@]}"; do
         if [ "$ext_lower" = "$valid_ext" ]; then
-            # Check if we should skip existing processed videos
-            if [ "$SKIP_EXISTING" -eq 1 ]; then
-                # Check for any processed file with this base name
-                processed_files=()
-                while IFS= read -r processed_file; do
-                    processed_files+=("$processed_file")
-                done < <(find "$(dirname "$file")" -name "$(basename "${file%.*}").processed.*" -type f)
-
-                if [ ${#processed_files[@]} -gt 0 ]; then
-                    # Take the first processed file found
-                    processed_file="${processed_files[0]}"
-
-                    # Check if the processed file is corrupted
-                    if ! check_video_corruption "$processed_file"; then
-                        echo "Processed file exists but is corrupted: $processed_file - will reprocess"
-                    # Check if the file size is reasonable
-                    elif ! check_file_size "$file" "$processed_file"; then
-                        echo "Processed file exists but has unreasonable size: $processed_file - will reprocess"
-                    else
-                        echo "Skipping $file (already processed: $processed_file)"
-                        continue 2  # Skip to next file in outer loop
-                    fi
-                fi
-            fi
             echo "$file" >> "$TMPFILE"
             break
         fi
