@@ -81,3 +81,4 @@ samples_*/
 .mypy_cache/
 .ruff_cache/
 *.gif
+dataset/
