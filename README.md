@@ -1,194 +1,83 @@
-# Video Pose Estimation
+# PyTorch OpenPose
 
-A Pythonic application that performs pose estimation on videos using OpenPose, following the Single Responsibility Principle.
+A PyTorch implementation of the OpenPose human pose estimation system. This project provides real-time **body and hand pose detection** capabilities through models converted directly from the original [CMU OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) project using [caffemodel2pytorch](https://github.com/vadimkantorov/caffemodel2pytorch).
 
-## Demo
-<p float="left">
-  <img src="docs/V_89_processed.gif" alt="Single person pose estimation" width="49%" />
-  <img src="docs/multiple_people_processed.gif" alt="Multiple people pose estimation" width="49%" />
-</p>
+## Introduction
 
-## Features
+This implementation focuses on two key components:
+- Body pose estimation (detecting body keypoints)
+- Hand pose estimation (detecting hand keypoints)
 
-- Process individual video files or live camera feed
-- Process all video files in a directory automatically
-- Detect human poses using OpenPose
-- Visualize pose keypoints and connections
-- Save processed videos with pose estimation overlay
-- Automatic output directory creation for batch processing
-- Modular architecture following Single Responsibility Principle
-- Type annotations and comprehensive documentation
-- Code quality ensured with pre-commit hooks
+The hand detection approach follows the methodology described in the original OpenPose implementation ([handDetector.cpp](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/src/openpose/hand/handDetector.cpp)):
 
-## Project Structure
+> "We directly use the body pose estimation models and use the wrist and elbow position to approximate the hand location, assuming the hand extends 0.15 times the length of the forearm in the same direction."
 
-```
-pose-estimation/
-├── main.py                            # Simple entry point
-├── pose_estimation/                   # Package directory
-│   ├── __init__.py                    # Package initialization
-│   ├── cli.py                         # Command-line interface
-│   ├── models/                        # Model-related modules
-│   │   ├── __init__.py
-│   │   └── openpose.py                # OpenPose model handling
-│   ├── processors/                    # Processing modules
-│   │   ├── __init__.py
-│   │   ├── directory_processor.py     # Directory batch processing
-│   │   ├── frame_processor.py         # Frame processing
-│   │   └── video_processor.py         # Video processing
-│   └── utils/                         # Utility functions
-│       └── __init__.py
-├── pyproject.toml                     # Project metadata and dependencies
-├── requirements.lock                  # Locked dependencies
-└── Makefile                           # Project automation
-```
+If this project helps your research, please consider giving it a star!
 
-## Requirements
+## Setup Guide
 
-This project uses `uv` from Astral.sh for dependency management instead of pip.
+### Dependencies
 
-## Installation
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/pose-estimation.git
-   cd pose-estimation
-   ```
-
-2. Install dependencies using uv:
-   ```
-   make install
-   ```
-
-   Or manually:
-   ```
-   uv pip install -e .
-   ```
-
-3. Download the required models:
-   ```
-   make prepare-models
-   ```
-
-## Usage
-
-### Command Line
-
-Run the application from the command line:
-
-```
-python main.py [input] [options]
-```
-
-Or after installation:
-
-```
-pose-estimation [input] [options]
-```
-
-### Arguments
-
-- `input`: Path to input video file, directory containing videos, or "camera" to use webcam
-
-### Options
-
-- `-o, --output`: Path to output video file (required for single video input)
-- `-m, --model-path`: Path to OpenPose model directory
-- `-nd, --no-display`: Don't display output while processing
-
-### Examples
-
-Process a video file and save the result:
-```
-python main.py path/to/video.mp4 -o output.mp4
-```
-
-Process all videos in a directory:
-```
-python main.py path/to/videos_directory
-```
-This will automatically create an output directory called `path/to/videos_directory_openpose` with all processed videos.
-
-Use webcam as input:
-```
-python main.py camera
-```
-
-### Using the Makefile
-
-The project includes a Makefile for common tasks:
-
+1. Create a Python 3.7 environment:
 ```bash
-# Setup environment and install dependencies
-make setup
-
-# Install dependencies with uv
-make install
-
-# Download models
-make prepare-models
-
-# Download sample videos
-make prepare-samples
-
-# Run on sample video
-make run-sample
-
-# Run on video with multiple people
-make run-multi
-
-# Process all videos in the samples directory
-make run-directory
-
-# Use webcam
-make run-webcam
-
-# Clean generated files
-make clean
-
-# Format code
-make format
-
-# Install pre-commit hooks
-make pre-commit-install
-
-# Run pre-commit hooks on staged files
-make pre-commit
-
-# Run pre-commit hooks on all files
-make pre-commit-all
+conda create -n pose-env python=3.7
+conda activate pose-env
 ```
 
-## How It Works
+2. Install PyTorch according to your system configuration:
+   - Visit https://download.pytorch.org/whl/torch_stable.html for the appropriate commands
 
-The application uses a modular architecture:
-
-1. **OpenPoseModel** - Loads the model and handles keypoint detection
-2. **FrameProcessor** - Processes individual frames for pose estimation
-3. **VideoProcessor** - Manages video sources and outputs
-4. **DirectoryProcessor** - Batch processes all videos in a directory
-5. **CLI** - Provides the command-line interface
-
-The application follows the Single Responsibility Principle, with each class having a single, well-defined responsibility.
-
-## Development
-
-### Code Quality Tools
-
-This project uses several code quality tools:
-
-- **black**: Code formatting
-- **isort**: Import sorting
-- **ruff**: Fast linting
-- **mypy**: Type checking
-- **pre-commit**: Automated checks before commits
-
-To install the pre-commit hooks:
-
+3. Install additional dependencies:
 ```bash
-make pre-commit-install
+pip install -r requirements.txt
 ```
 
-## License
+### Model Files
 
-MIT
+Download the pre-trained models from one of these sources:
+* [Dropbox](https://www.dropbox.com/sh/7xbup2qsn7vvjxo/AABWFksdlgOMXR_r5v3RwKRYa?dl=0)
+* [Baidu Cloud](https://pan.baidu.com/s/1IlkvuSi0ocNckwbnUe7j-g)
+* [Google Drive](https://drive.google.com/drive/folders/1JsvI4M4ZTg98fmnCZLFM-3TeovnCRElG?usp=sharing)
+
+Place the downloaded `.pth` files in a directory named `model` in the project root.
+
+## Running the Application
+
+The project offers three demo modes:
+
+### Webcam Demo
+Process video from your webcam in real-time:
+```bash
+python demo_camera.py
+```
+
+### Image Demo
+Process a sample image:
+```bash
+python demo.py
+```
+
+### Video File Processing
+Process an existing video file (requires [ffmpeg-python](https://pypi.org/project/ffmpeg-python/)):
+```bash
+python demo_video.py <path-to-video-file>
+```
+
+## Hardware Acceleration
+
+This implementation is optimized for various hardware platforms:
+
+- **NVIDIA GPUs**: Automatically utilizes CUDA acceleration when available for maximum performance
+- **Apple Silicon**: Takes advantage of Metal Performance Shaders (MPS) on M1/M2/M3 Macs
+- **CPU-only systems**: Runs efficiently on standard processors without dedicated graphics hardware
+
+The system automatically selects the optimal processing device based on your hardware configuration.
+
+## Key Features
+
+- Cross-platform support (Windows, macOS, Linux)
+- Multiple acceleration options (CPU, CUDA, MPS)
+- Body keypoint detection
+- Hand keypoint detection
+- Real-time processing capability
+- Support for image, video file, and webcam input
