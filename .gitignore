@@ -85,3 +85,5 @@ dataset/
 videos_samp/
 *.mov
 *.mp4
+*.json
+mmpose/vis_results/*
