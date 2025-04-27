@@ -1,14 +1,25 @@
+#!/usr/bin/env python3
+"""
+Violence detection inference script for MMPose JSON files.
+
+This script uses a trained Graph Neural Network model to predict violence
+scores from human pose data in MMPose JSON format.
+"""
+from __future__ import annotations
+
 import argparse
 import json
-import os
+from pathlib import Path
+from typing import List, Tuple
 
 import numpy as np
 import torch
+from torch_geometric.data import Data
 
 from violence_detection_model import ViolenceDetectionGNN, create_pose_graph, get_device
 
 
-def load_and_process_json(json_file):
+def load_and_process_json(json_file: Path) -> List[Tuple[int, List[Data]]]:
     """
     Load and process a single MMPose JSON file for inference.
 
@@ -16,11 +27,11 @@ def load_and_process_json(json_file):
         json_file: Path to the JSON file
 
     Returns:
-        List of graph data objects
+        List of tuples containing (frame_id, list_of_graph_data)
     """
     graphs = []
 
-    with open(json_file, "r") as f:
+    with open(json_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     # Process each frame in the JSON file
@@ -46,7 +57,9 @@ def load_and_process_json(json_file):
     return graphs
 
 
-def predict_violence(model, graphs, device):
+def predict_violence(
+    model: ViolenceDetectionGNN, graphs: List[Data], device: torch.device
+) -> List[float]:
     """
     Predict violence scores for graphs.
 
@@ -56,7 +69,7 @@ def predict_violence(model, graphs, device):
         device: Device to run inference on
 
     Returns:
-        List of violence scores
+        List of violence scores between 0 and 1
     """
     model.eval()
     scores = []
@@ -78,7 +91,8 @@ def predict_violence(model, graphs, device):
     return scores
 
 
-def main():
+def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments for the inference script."""
     parser = argparse.ArgumentParser(description="Violence Detection from MMPose JSON")
     parser.add_argument(
         "--model_path",
@@ -95,7 +109,39 @@ def main():
         default="violence_scores.json",
         help="Path to output JSON file",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def interpret_score(score: float) -> str:
+    """
+    Interpret a violence score as a human-readable category.
+
+    Args:
+        score: Violence score between 0 and 1
+
+    Returns:
+        String interpretation of the score
+    """
+    if score < 0.3:
+        return "Likely non-violent"
+    if score < 0.7:
+        return "Ambiguous or moderate activity"
+    return "Likely violent"
+
+
+def main() -> None:
+    """Main inference function to detect violence from pose data."""
+    args = parse_arguments()
+
+    # Convert string paths to Path objects
+    input_file = Path(args.input_file)
+    output_file = Path(args.output_file)
+    model_path = Path(args.model_path)
+
+    # Validate input file exists
+    if not input_file.exists():
+        print(f"Error: Input file {input_file} does not exist.")
+        return
 
     # Use MPS if available (for Apple Silicon)
     device = get_device()
@@ -104,12 +150,12 @@ def main():
     # Load the model
     in_channels = 2  # X, Y coordinates
     model = ViolenceDetectionGNN(in_channels=in_channels).to(device)
-    model.load_state_dict(torch.load(args.model_path, map_location=device))
-    print(f"Model loaded from {args.model_path}")
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    print(f"Model loaded from {model_path}")
 
     # Load and process the input JSON file
-    print(f"Processing input file: {args.input_file}")
-    graph_data = load_and_process_json(args.input_file)
+    print(f"Processing input file: {input_file}")
+    graph_data = load_and_process_json(input_file)
 
     if not graph_data:
         print("No valid pose data found in the input file.")
@@ -127,41 +173,32 @@ def main():
         results.append(
             {
                 "frame_id": frame_id,
-                "violence_score": avg_score,
-                "person_scores": frame_scores,
+                "violence_score": float(avg_score),
+                "person_scores": [float(score) for score in frame_scores],
             }
         )
 
+    # Calculate overall violence score
+    overall_score = np.mean([r["violence_score"] for r in results]) if results else 0.0
+
+    # Prepare output data
+    output_data = {
+        "file_name": input_file.name,
+        "results": results,
+        "overall_violence_score": float(overall_score),
+    }
+
     # Save results to output file
-    with open(args.output_file, "w") as f:
-        json.dump(
-            {
-                "file_name": os.path.basename(args.input_file),
-                "results": results,
-                "overall_violence_score": np.mean(
-                    [r["violence_score"] for r in results]
-                )
-                if results
-                else 0.0,
-            },
-            f,
-            indent=2,
-        )
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(output_data, f, indent=2)
 
-    print(f"Results saved to {args.output_file}")
+    print(f"Results saved to {output_file}")
 
-    # Print overall violence score
+    # Print overall violence score and interpretation
     if results:
-        overall_score = np.mean([r["violence_score"] for r in results])
+        interpretation = interpret_score(overall_score)
         print(f"Overall violence score: {overall_score:.4f}")
-
-        # Interpret the score
-        if overall_score < 0.3:
-            print("Interpretation: Likely non-violent")
-        elif overall_score < 0.7:
-            print("Interpretation: Ambiguous or moderate activity")
-        else:
-            print("Interpretation: Likely violent")
+        print(f"Interpretation: {interpretation}")
 
 
 if __name__ == "__main__":
