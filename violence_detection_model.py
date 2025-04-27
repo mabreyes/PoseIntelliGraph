@@ -31,7 +31,7 @@ NON_VIOLENT_PATH = DATA_PATH / "non-violent/cam1/processed"
 
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 1
+NUM_EPOCHS = 50
 LEARNING_RATE = 0.001
 
 
