@@ -17,7 +17,7 @@ from tqdm import tqdm
 DATA_PATH = "/Volumes/MARCREYES/violence-detection-dataset"
 VIOLENT_PATH = os.path.join(DATA_PATH, "violent/cam1/processed")
 BATCH_SIZE = 32
-NUM_EPOCHS = 50
+NUM_EPOCHS = 1
 LEARNING_RATE = 0.001
 
 
