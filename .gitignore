@@ -81,3 +81,11 @@ samples_*/
 .mypy_cache/
 .ruff_cache/
 *.gif
+dataset/
+videos_samp/
+*.mov
+*.mp4
+*.json
+mmpose/vis_results/*
+*.pt
+*.png
