@@ -16,6 +16,7 @@ from tqdm import tqdm
 # Constants
 DATA_PATH = "/Volumes/MARCREYES/violence-detection-dataset"
 VIOLENT_PATH = os.path.join(DATA_PATH, "violent/cam1/processed")
+NON_VIOLENT_PATH = os.path.join(DATA_PATH, "non-violent/cam1/processed")
 BATCH_SIZE = 32
 NUM_EPOCHS = 1
 LEARNING_RATE = 0.001
@@ -307,7 +308,7 @@ def main():
 
     # Load and preprocess data
     print("Loading and preprocessing data...")
-    graphs, labels = load_mmpose_data(VIOLENT_PATH)
+    graphs, labels = load_mmpose_data(VIOLENT_PATH, NON_VIOLENT_PATH)
 
     if not graphs:
         print("No valid graphs were created. Check your data.")

@@ -87,3 +87,5 @@ videos_samp/
 *.mp4
 *.json
 mmpose/vis_results/*
+*.pt
+*.png
