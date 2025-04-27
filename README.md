@@ -1,5 +1,8 @@
 # Violence Detection using Pose Graph Neural Networks
 
+![sample image](docs/img/1.gif)
+
+
 This project detects violent behavior in videos by analyzing human pose data using Graph Neural Networks (GNNs). The system converts pose keypoints from MMPose into graph structures, then processes them through a GNN to predict a violence score between 0 and 1.
 
 ## Table of Contents
