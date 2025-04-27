@@ -1,90 +1,90 @@
-# PyTorch OpenPose
+# Violence Detection from Human Pose Data
 
-A PyTorch implementation of the OpenPose human pose estimation system. This project provides real-time **body and hand pose detection** capabilities through models converted directly from the original [CMU OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) project using [caffemodel2pytorch](https://github.com/vadimkantorov/caffemodel2pytorch).
+This project uses Graph Neural Networks (GNNs) to detect violent behavior from human pose estimation data. The system analyzes human poses extracted by MMPose and predicts a violence score between 0 and 1.
 
-<div align="center">
-  <div style="display: flex; justify-content: center; gap: 10px;">
-    <img src="docs/sample.gif" alt="Sample Pose Detection" width="48%"/>
-    <img src="docs/sample2.gif" alt="Sample Pose Detection" width="48%"/>
-  </div>
-</div>
+## Features
 
-## Introduction
+- Process MMPose JSON files containing pose estimation data
+- Convert human pose data into graph structures
+- Apply Graph Neural Networks to analyze pose interactions
+- Predict violence scores on a scale from 0 to 1
+- Visualize training metrics and model performance
 
-This implementation focuses on two key components:
-- Body pose estimation (detecting body keypoints)
-- Hand pose estimation (detecting hand keypoints)
+## Requirements
 
-The hand detection approach follows the methodology described in the original OpenPose implementation ([handDetector.cpp](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/src/openpose/hand/handDetector.cpp)):
+Install the required packages:
 
-> "We directly use the body pose estimation models and use the wrist and elbow position to approximate the hand location, assuming the hand extends 0.15 times the length of the forearm in the same direction."
-
-If this project helps your research, please consider giving it a star!
-
-## Setup Guide
-
-### Dependencies
-
-1. Create a Python 3.7 environment:
-```bash
-conda create -n pose-env python=3.7
-conda activate pose-env
-```
-
-2. Install PyTorch according to your system configuration:
-   - Visit https://download.pytorch.org/whl/torch_stable.html for the appropriate commands
-
-3. Install additional dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Model Files
+## Dataset Structure
 
-Download the pre-trained models from one of these sources:
-* [Dropbox](https://www.dropbox.com/sh/7xbup2qsn7vvjxo/AABWFksdlgOMXR_r5v3RwKRYa?dl=0)
-* [Baidu Cloud](https://pan.baidu.com/s/1IlkvuSi0ocNckwbnUe7j-g)
-* [Google Drive](https://drive.google.com/drive/folders/1JsvI4M4ZTg98fmnCZLFM-3TeovnCRElG?usp=sharing)
+The dataset should be organized as follows:
 
-Place the downloaded `.pth` files in a directory named `model` in the project root.
-
-## Running the Application
-
-The project offers three demo modes:
-
-### Webcam Demo
-Process video from your webcam in real-time:
-```bash
-python demo_camera.py
+```
+/path/to/violence-detection-dataset/
+├── violent/
+│   └── cam1/
+│       └── processed/
+│           ├── results_1.json
+│           ├── results_2.json
+│           └── ...
+└── non-violent/
+    └── cam1/
+        └── processed/
+            ├── results_1.json
+            ├── results_2.json
+            └── ...
 ```
 
-### Image Demo
-Process a sample image:
+## Usage
+
+### Training the Model
+
+To train the violence detection model:
+
 ```bash
-python demo.py
+python violence_detection_model.py
 ```
 
-### Video File Processing
-Process an existing video file (requires [ffmpeg-python](https://pypi.org/project/ffmpeg-python/)):
+This will:
+1. Load MMPose JSON files from the specified directories
+2. Convert pose data to graph representations
+3. Train a GNN model on the data
+4. Evaluate the model performance
+5. Save the trained model and performance metrics
+
+### Making Predictions
+
+To predict violence scores for new pose data:
+
 ```bash
-python demo_video.py <path-to-video-file>
+python inference.py --input_file /path/to/results.json --output_file violence_scores.json
 ```
 
-## Hardware Acceleration
+The output will include:
+- Violence scores for each frame
+- Individual person scores within each frame
+- An overall violence score for the entire sequence
 
-This implementation is optimized for various hardware platforms:
+## Model Architecture
 
-- **NVIDIA GPUs**: Automatically utilizes CUDA acceleration when available for maximum performance
-- **Apple Silicon**: Takes advantage of Metal Performance Shaders (MPS) on M1/M2/M3 Macs
-- **CPU-only systems**: Runs efficiently on standard processors without dedicated graphics hardware
+The violence detection model uses a Graph Convolutional Network (GCN) with:
+- Multiple graph convolutional layers
+- Dropout for regularization
+- Global pooling for graph-level predictions
+- Fully connected layers for final classification
 
-The system automatically selects the optimal processing device based on your hardware configuration.
+Pose keypoints are represented as nodes in the graph, with edges connecting related body parts.
 
-## Key Features
+## Evaluation
 
-- Cross-platform support (Windows, macOS, Linux)
-- Multiple acceleration options (CPU, CUDA, MPS)
-- Body keypoint detection
-- Hand keypoint detection
-- Real-time processing capability
-- Support for image, video file, and webcam input
+The model is evaluated using:
+- Binary cross-entropy loss
+- ROC AUC score for classification performance
+- Training and validation curves to monitor learning progress
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
