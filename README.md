@@ -253,14 +253,32 @@ The output JSON file will have this structure:
 
 ## Model Architecture
 
-The violence detection model uses a Graph Convolutional Network (GCN) with:
+The violence detection model uses a multi-component architecture:
 
-- Multiple graph convolutional layers to process spatial relationships
-- Dropout regularization to prevent overfitting
-- Global pooling for graph-level predictions
-- Fully connected layers for final classification
+1. **Graph Neural Network (GNN) Component**:
+   - Processes pose keypoints as graph structures
+   - Uses Graph Convolutional Network (GCN) layers to analyze spatial relationships
+   - Converts raw pose data into meaningful embeddings
 
-Pose keypoints are represented as nodes in the graph, with edges connecting related body parts. This approach allows the model to analyze the spatial relationships between body parts and identify patterns associated with violent actions.
+2. **Transformer Component**:
+   - Takes embeddings from the GNN
+   - Applies self-attention to capture contextual relationships
+   - Enhances feature representation through attention mechanisms
+
+3. **Classification Component**:
+   - Takes transformer outputs and applies fully connected layers
+   - Uses dropout regularization to prevent overfitting
+   - Produces final violence score on a scale from 0 to 1
+
+This pipeline architecture (pose keypoints → GNN → Transformer → classification) allows the model to:
+- Analyze the spatial relationships between body parts via the GNN
+- Capture temporal and contextual patterns via the Transformer
+- Make more robust predictions by combining multiple deep learning techniques
+
+The code is modularly organized into separate files:
+- `gnn.py`: Contains the GNN component
+- `transformer.py`: Contains the Transformer component
+- `violence_detection_model.py`: Main file that combines all components
 
 ## Performance
 

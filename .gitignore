@@ -86,6 +86,8 @@ videos_samp/
 *.mov
 *.mp4
 *.json
-mmpose/vis_results/*
 *.pt
 *.png
+
+# Ignore mmpose directory (it has its own .gitignore)
+mmpose/

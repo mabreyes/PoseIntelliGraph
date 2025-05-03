@@ -9,10 +9,15 @@ from torch import Tensor
 
 from mmpose.registry import KEYPOINT_CODECS
 from mmpose.utils.tensor_utils import to_numpy
+
 from .base import BaseKeypointCodec
-from .utils import (batch_heatmap_nms, generate_gaussian_heatmaps,
-                    generate_udp_gaussian_heatmaps, refine_keypoints,
-                    refine_keypoints_dark_udp,)
+from .utils import (
+    batch_heatmap_nms,
+    generate_gaussian_heatmaps,
+    generate_udp_gaussian_heatmaps,
+    refine_keypoints,
+    refine_keypoints_dark_udp,
+)
 
 
 def _py_max_match(scores):

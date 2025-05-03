@@ -6,10 +6,15 @@ import torch
 from torch import Tensor
 
 from mmpose.registry import KEYPOINT_CODECS
+
 from .base import BaseKeypointCodec
-from .utils import (batch_heatmap_nms, generate_displacement_heatmap,
-                    generate_gaussian_heatmaps, get_diagonal_lengths,
-                    get_instance_root,)
+from .utils import (
+    batch_heatmap_nms,
+    generate_displacement_heatmap,
+    generate_gaussian_heatmaps,
+    get_diagonal_lengths,
+    get_instance_root,
+)
 
 
 @KEYPOINT_CODECS.register_module()

@@ -5,11 +5,14 @@ from unittest import TestCase
 import numpy as np
 from mmcv.transforms import Compose
 
-from mmpose.datasets.transforms import (BottomupGetHeatmapMask,
-                                        BottomupRandomAffine,
-                                        BottomupRandomChoiceResize,
-                                        BottomupRandomCrop, BottomupResize,
-                                        RandomFlip,)
+from mmpose.datasets.transforms import (
+    BottomupGetHeatmapMask,
+    BottomupRandomAffine,
+    BottomupRandomChoiceResize,
+    BottomupRandomCrop,
+    BottomupResize,
+    RandomFlip,
+)
 from mmpose.testing import get_coco_sample
 
 

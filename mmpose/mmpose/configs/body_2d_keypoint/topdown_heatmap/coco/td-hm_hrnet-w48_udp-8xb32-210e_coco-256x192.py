@@ -10,13 +10,25 @@ from mmengine.optim import LinearLR, MultiStepLR
 from torch.optim import Adam
 
 from mmpose.codecs import UDPHeatmap
-from mmpose.datasets import (CocoDataset, GenerateTarget, GetBBoxCenterScale,
-                             LoadImage, PackPoseInputs, RandomFlip,
-                             RandomHalfBody, TopdownAffine,)
+from mmpose.datasets import (
+    CocoDataset,
+    GenerateTarget,
+    GetBBoxCenterScale,
+    LoadImage,
+    PackPoseInputs,
+    RandomFlip,
+    RandomHalfBody,
+    TopdownAffine,
+)
 from mmpose.datasets.transforms.common_transforms import RandomBBoxTransform
 from mmpose.evaluation import CocoMetric
-from mmpose.models import (HeatmapHead, HRNet, KeypointMSELoss,
-                           PoseDataPreprocessor, TopdownPoseEstimator,)
+from mmpose.models import (
+    HeatmapHead,
+    HRNet,
+    KeypointMSELoss,
+    PoseDataPreprocessor,
+    TopdownPoseEstimator,
+)
 
 # runtime
 train_cfg.update(max_epochs=210, val_interval=10)

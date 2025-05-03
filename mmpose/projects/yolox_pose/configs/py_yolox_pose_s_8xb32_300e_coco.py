@@ -3,11 +3,20 @@ from mmengine.config import read_base
 with read_base():
     from ._base_.py_default_runtime import *
 
-from datasets import (CocoDataset, FilterDetPoseAnnotations, PackDetPoseInputs,
-                      PoseToDetConverter,)
+from datasets import (
+    CocoDataset,
+    FilterDetPoseAnnotations,
+    PackDetPoseInputs,
+    PoseToDetConverter,
+)
 from mmcv.ops import nms
-from mmdet.datasets.transforms import (Pad, RandomAffine, RandomFlip, Resize,
-                                       YOLOXHSVRandomAug,)
+from mmdet.datasets.transforms import (
+    Pad,
+    RandomAffine,
+    RandomFlip,
+    Resize,
+    YOLOXHSVRandomAug,
+)
 from mmdet.engine.hooks import SyncNormHook
 from mmdet.engine.schedulers import QuadraticWarmupLR
 from mmdet.models import CrossEntropyLoss, DetDataPreprocessor, IoULoss, L1Loss
@@ -19,10 +28,14 @@ from mmengine.optim import ConstantLR, CosineAnnealingLR, OptimWrapper
 from mmengine.runner import EpochBasedTrainLoop
 from mmyolo.datasets.transforms import Mosaic, YOLOXMixUp
 from mmyolo.engine.hooks import YOLOXModeSwitchHook
-from mmyolo.models import (YOLOXPAFPN, ExpMomentumEMA, YOLODetector,
-                           YOLOXCSPDarknet,)
-from models import (OksLoss, PoseBatchSyncRandomResize, PoseSimOTAAssigner,
-                    YOLOXPoseHead, YOLOXPoseHeadModule,)
+from mmyolo.models import YOLOXPAFPN, ExpMomentumEMA, YOLODetector, YOLOXCSPDarknet
+from models import (
+    OksLoss,
+    PoseBatchSyncRandomResize,
+    PoseSimOTAAssigner,
+    YOLOXPoseHead,
+    YOLOXPoseHeadModule,
+)
 from torch.nn import BatchNorm2d, SiLU
 from torch.optim import AdamW
 

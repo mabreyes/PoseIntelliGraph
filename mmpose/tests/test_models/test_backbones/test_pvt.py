@@ -3,9 +3,11 @@ from unittest import TestCase
 
 import torch
 
-from mmpose.models.backbones.pvt import (PVTEncoderLayer,
-                                         PyramidVisionTransformer,
-                                         PyramidVisionTransformerV2,)
+from mmpose.models.backbones.pvt import (
+    PVTEncoderLayer,
+    PyramidVisionTransformer,
+    PyramidVisionTransformerV2,
+)
 
 
 class TestPVT(TestCase):

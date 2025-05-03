@@ -6,9 +6,12 @@ import numpy as np
 from mmcv.parallel import DataContainer as DC
 from torch.utils.data import Dataset
 
-from mmpose.core.evaluation.top_down_eval import (keypoint_auc, keypoint_epe,
-                                                  keypoint_nme,
-                                                  keypoint_pck_accuracy,)
+from mmpose.core.evaluation.top_down_eval import (
+    keypoint_auc,
+    keypoint_epe,
+    keypoint_nme,
+    keypoint_pck_accuracy,
+)
 from mmpose.datasets import DATASETS
 from mmpose.datasets.pipelines import Compose
 

@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmengine.optim.scheduler import (
-    ConstantParamScheduler as MMENGINE_ConstantParamScheduler,)
+    ConstantParamScheduler as MMENGINE_ConstantParamScheduler,
+)
 from mmengine.optim.scheduler.lr_scheduler import LRSchedulerMixin
 
 from mmpose.registry import PARAM_SCHEDULERS

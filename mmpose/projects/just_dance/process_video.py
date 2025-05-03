@@ -15,15 +15,21 @@ from mmpose.datasets.datasets.utils import parse_pose_metainfo
 from mmpose.visualization import PoseLocalVisualizer
 
 try:
-    from .calculate_similarity import (calculate_similarity,
-                                       select_piece_from_similarity,)
-    from .utils import (blend_images, convert_video_fps, get_smoothed_kpt,
-                        resize_image_to_fixed_height,)
+    from .calculate_similarity import calculate_similarity, select_piece_from_similarity
+    from .utils import (
+        blend_images,
+        convert_video_fps,
+        get_smoothed_kpt,
+        resize_image_to_fixed_height,
+    )
 except ImportError:
-    from calculate_similarity import (calculate_similarity,
-                                      select_piece_from_similarity,)
-    from utils import (blend_images, convert_video_fps, get_smoothed_kpt,
-                       resize_image_to_fixed_height,)
+    from calculate_similarity import calculate_similarity, select_piece_from_similarity
+    from utils import (
+        blend_images,
+        convert_video_fps,
+        get_smoothed_kpt,
+        resize_image_to_fixed_height,
+    )
 
 model_cfg = dict(
     human=dict(

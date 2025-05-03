@@ -16,15 +16,28 @@ from torch.nn import SiLU, SyncBatchNorm
 from torch.optim import AdamW
 
 from mmpose.codecs import SimCCLabel
-from mmpose.datasets import (CocoDataset, GenerateTarget, GetBBoxCenterScale,
-                             LoadImage, PackPoseInputs, RandomFlip,
-                             RandomHalfBody, TopdownAffine,)
-from mmpose.datasets.transforms.common_transforms import (Albumentation,
-                                                          RandomBBoxTransform,)
+from mmpose.datasets import (
+    CocoDataset,
+    GenerateTarget,
+    GetBBoxCenterScale,
+    LoadImage,
+    PackPoseInputs,
+    RandomFlip,
+    RandomHalfBody,
+    TopdownAffine,
+)
+from mmpose.datasets.transforms.common_transforms import (
+    Albumentation,
+    RandomBBoxTransform,
+)
 from mmpose.engine.hooks import ExpMomentumEMA
 from mmpose.evaluation import CocoMetric
-from mmpose.models import (KLDiscretLoss, PoseDataPreprocessor, RTMCCHead,
-                           TopdownPoseEstimator,)
+from mmpose.models import (
+    KLDiscretLoss,
+    PoseDataPreprocessor,
+    RTMCCHead,
+    TopdownPoseEstimator,
+)
 
 # runtime
 max_epochs = 420

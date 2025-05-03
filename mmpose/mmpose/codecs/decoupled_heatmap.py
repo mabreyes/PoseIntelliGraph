@@ -5,9 +5,14 @@ from typing import Optional, Tuple
 import numpy as np
 
 from mmpose.registry import KEYPOINT_CODECS
+
 from .base import BaseKeypointCodec
-from .utils import (generate_gaussian_heatmaps, get_diagonal_lengths,
-                    get_instance_bbox, get_instance_root,)
+from .utils import (
+    generate_gaussian_heatmaps,
+    get_diagonal_lengths,
+    get_instance_bbox,
+    get_instance_root,
+)
 from .utils.post_processing import get_heatmap_maximum
 from .utils.refinement import refine_keypoints
 

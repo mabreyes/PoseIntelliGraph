@@ -10,13 +10,15 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
 from torch_geometric.data import Data
 
-from violence_detection_model import ViolenceDetectionGNN, create_pose_graph, get_device
+# Import from separate component files
+from gnn import create_pose_graph
+from violence_detection_model import ViolenceDetectionGNN, get_device
 
 
 def load_and_process_json(json_file: Path) -> List[Tuple[int, List[Data]]]:
@@ -109,51 +111,107 @@ def parse_arguments() -> argparse.Namespace:
         default="violence_scores.json",
         help="Path to output JSON file",
     )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="Violence classification threshold (0.0-1.0). If not provided, uses threshold from model file",
+    )
+    parser.add_argument(
+        "--show_metrics",
+        action="store_true",
+        help="Show threshold metrics from the model",
+    )
     return parser.parse_args()
 
 
-def interpret_score(score: float) -> str:
+def load_model_and_threshold(
+    model_path: Path, device: torch.device
+) -> Tuple[ViolenceDetectionGNN, float, Optional[Dict]]:
     """
-    Interpret a violence score as a human-readable category.
+    Load the model and threshold from a saved model file.
+
+    Args:
+        model_path: Path to the saved model file
+        device: Device to load the model to
+
+    Returns:
+        Tuple of (model, threshold, metrics)
+    """
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+
+    in_channels = 2
+    model = ViolenceDetectionGNN(
+        in_channels=in_channels,
+        hidden_channels=64,
+        transformer_heads=4,
+        transformer_layers=2,
+    ).to(device)
+
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
+        threshold = checkpoint.get("threshold", 0.5)
+        metrics = checkpoint.get("metrics", None)
+    else:
+        model.load_state_dict(checkpoint)
+        threshold = 0.5
+        metrics = None
+
+    return model, threshold, metrics
+
+
+def interpret_score(score: float, threshold: float) -> Tuple[str, bool]:
+    """
+    Interpret a violence score based on the threshold.
 
     Args:
         score: Violence score between 0 and 1
+        threshold: Classification threshold
 
     Returns:
-        String interpretation of the score
+        Tuple of (interpretation string, is_violent boolean)
     """
-    if score < 0.3:
-        return "Likely non-violent"
-    if score < 0.7:
-        return "Ambiguous or moderate activity"
-    return "Likely violent"
+    is_violent = score >= threshold
+
+    if score < threshold - 0.2:
+        return "Likely non-violent", is_violent
+    elif score < threshold:
+        return "Possibly non-violent", is_violent
+    elif score < threshold + 0.2:
+        return "Possibly violent", is_violent
+    else:
+        return "Likely violent", is_violent
 
 
 def main() -> None:
     """Main inference function to detect violence from pose data."""
     args = parse_arguments()
 
-    # Convert string paths to Path objects
     input_file = Path(args.input_file)
     output_file = Path(args.output_file)
     model_path = Path(args.model_path)
 
-    # Validate input file exists
     if not input_file.exists():
         print(f"Error: Input file {input_file} does not exist.")
         return
 
-    # Use MPS if available (for Apple Silicon)
     device = get_device()
     print(f"Using device: {device}")
 
-    # Load the model
-    in_channels = 2  # X, Y coordinates
-    model = ViolenceDetectionGNN(in_channels=in_channels).to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model, model_threshold, metrics = load_model_and_threshold(model_path, device)
     print(f"Model loaded from {model_path}")
 
-    # Load and process the input JSON file
+    threshold = args.threshold if args.threshold is not None else model_threshold
+    print(
+        f"Using classification threshold: {threshold}"
+        + (" (from model)" if args.threshold is None else " (user-specified)")
+    )
+
+    if args.show_metrics and metrics:
+        print("\nModel threshold metrics:")
+        for metric, value in metrics.items():
+            print(f"  {metric}: {value}")
+
     print(f"Processing input file: {input_file}")
     graph_data = load_and_process_json(input_file)
 
@@ -161,44 +219,53 @@ def main() -> None:
         print("No valid pose data found in the input file.")
         return
 
-    # Predict violence scores for each frame
     results = []
+    violent_frame_count = 0
 
     for frame_id, frame_graphs in graph_data:
         frame_scores = predict_violence(model, frame_graphs, device)
-
-        # Average the scores of all people in the frame
         avg_score = np.mean(frame_scores) if frame_scores else 0.0
+
+        interpretation, is_violent = interpret_score(avg_score, threshold)
+        if is_violent:
+            violent_frame_count += 1
 
         results.append(
             {
                 "frame_id": frame_id,
                 "violence_score": float(avg_score),
+                "is_violent": bool(is_violent),
+                "interpretation": interpretation,
                 "person_scores": [float(score) for score in frame_scores],
             }
         )
 
-    # Calculate overall violence score
     overall_score = np.mean([r["violence_score"] for r in results]) if results else 0.0
+    overall_interpretation, is_violent_overall = interpret_score(
+        overall_score, threshold
+    )
 
-    # Prepare output data
+    violent_percentage = (violent_frame_count / len(results)) * 100 if results else 0
+
     output_data = {
-        "file_name": input_file.name,
+        "file_name": str(input_file.name),
         "results": results,
         "overall_violence_score": float(overall_score),
+        "is_violent_overall": bool(is_violent_overall),
+        "violent_frame_percentage": float(violent_percentage),
+        "classification_threshold": float(threshold),
+        "interpretation": str(overall_interpretation),
     }
 
-    # Save results to output file
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(output_data, f, indent=2)
 
     print(f"Results saved to {output_file}")
-
-    # Print overall violence score and interpretation
-    if results:
-        interpretation = interpret_score(overall_score)
-        print(f"Overall violence score: {overall_score:.4f}")
-        print(f"Interpretation: {interpretation}")
+    print(f"Overall violence score: {overall_score}")
+    print(f"Interpretation: {overall_interpretation}")
+    print(
+        f"Violent frames: {violent_frame_count}/{len(results)} ({violent_percentage}%)"
+    )
 
 
 if __name__ == "__main__":
