@@ -28,12 +28,7 @@ from mmengine.optim import ConstantLR, CosineAnnealingLR, OptimWrapper
 from mmengine.runner import EpochBasedTrainLoop
 from mmyolo.datasets.transforms import Mosaic, YOLOXMixUp
 from mmyolo.engine.hooks import YOLOXModeSwitchHook
-from mmyolo.models import (
-    YOLOXPAFPN,
-    ExpMomentumEMA,
-    YOLODetector,
-    YOLOXCSPDarknet,
-)
+from mmyolo.models import YOLOXPAFPN, ExpMomentumEMA, YOLODetector, YOLOXCSPDarknet
 from models import (
     OksLoss,
     PoseBatchSyncRandomResize,

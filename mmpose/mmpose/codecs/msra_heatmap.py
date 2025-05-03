@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 import numpy as np
 
 from mmpose.registry import KEYPOINT_CODECS
+
 from .base import BaseKeypointCodec
 from .utils.gaussian_heatmap import (
     generate_gaussian_heatmaps,

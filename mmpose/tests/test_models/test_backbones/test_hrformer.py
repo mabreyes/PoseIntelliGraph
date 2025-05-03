@@ -3,11 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmpose.models.backbones.hrformer import (
-    HRFomerModule,
-    HRFormer,
-    HRFormerBlock,
-)
+from mmpose.models.backbones.hrformer import HRFomerModule, HRFormer, HRFormerBlock
 
 
 class TestHrformer(TestCase):

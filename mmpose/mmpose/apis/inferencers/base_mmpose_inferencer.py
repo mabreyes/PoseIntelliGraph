@@ -23,12 +23,7 @@ import numpy as np
 import torch.nn as nn
 from mmengine.config import Config, ConfigDict
 from mmengine.dataset import Compose
-from mmengine.fileio import (
-    get_file_backend,
-    isdir,
-    join_path,
-    list_dir_or_file,
-)
+from mmengine.fileio import get_file_backend, isdir, join_path, list_dir_or_file
 from mmengine.infer.infer import BaseInferencer, ModelType
 from mmengine.logging import print_log
 from mmengine.registry import init_default_scope
@@ -40,6 +35,7 @@ from rich.progress import track
 from mmpose.apis.inference import dataset_meta_from_config
 from mmpose.registry import DATASETS
 from mmpose.structures import PoseDataSample, split_instances
+
 from .utils import default_det_models
 
 try:

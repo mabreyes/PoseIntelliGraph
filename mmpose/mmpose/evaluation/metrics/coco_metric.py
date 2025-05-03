@@ -14,6 +14,7 @@ from xtcocotools.cocoeval import COCOeval
 
 from mmpose.registry import METRICS
 from mmpose.structures.bbox import bbox_xyxy2xywh
+
 from ..functional import (
     oks_nms,
     soft_oks_nms,

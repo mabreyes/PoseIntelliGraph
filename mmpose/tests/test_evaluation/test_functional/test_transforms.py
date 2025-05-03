@@ -4,11 +4,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from mmpose.evaluation.functional import (
-    transform_ann,
-    transform_pred,
-    transform_sigmas,
-)
+from mmpose.evaluation.functional import transform_ann, transform_pred, transform_sigmas
 
 
 class TestKeypointEval(TestCase):

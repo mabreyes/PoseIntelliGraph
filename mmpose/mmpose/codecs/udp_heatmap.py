@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 from mmpose.registry import KEYPOINT_CODECS
+
 from .base import BaseKeypointCodec
 from .utils import (
     generate_offset_heatmap,

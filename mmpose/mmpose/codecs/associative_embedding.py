@@ -9,6 +9,7 @@ from torch import Tensor
 
 from mmpose.registry import KEYPOINT_CODECS
 from mmpose.utils.tensor_utils import to_numpy
+
 from .base import BaseKeypointCodec
 from .utils import (
     batch_heatmap_nms,

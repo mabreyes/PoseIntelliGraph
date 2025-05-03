@@ -15,10 +15,7 @@ from .instance_property import (
     get_instance_bbox,
     get_instance_root,
 )
-from .offset_heatmap import (
-    generate_displacement_heatmap,
-    generate_offset_heatmap,
-)
+from .offset_heatmap import generate_displacement_heatmap, generate_offset_heatmap
 from .post_processing import (
     batch_heatmap_nms,
     gaussian_blur,

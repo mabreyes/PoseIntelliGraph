@@ -25,11 +25,7 @@ from mmpose.apis import (
 from mmpose.models.pose_estimators import PoseLifter
 from mmpose.models.pose_estimators.topdown import TopdownPoseEstimator
 from mmpose.registry import VISUALIZERS
-from mmpose.structures import (
-    PoseDataSample,
-    merge_data_samples,
-    split_instances,
-)
+from mmpose.structures import PoseDataSample, merge_data_samples, split_instances
 from mmpose.utils import adapt_mmdet_pipeline
 
 try:

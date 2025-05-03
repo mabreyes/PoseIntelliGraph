@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,11 +18,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import (
+    confusion_matrix,
+    f1_score,
+    precision_recall_curve,
     roc_auc_score,
     roc_curve,
-    precision_recall_curve,
-    f1_score,
-    confusion_matrix,
 )
 from sklearn.model_selection import train_test_split
 from torch_geometric.data import Data
@@ -32,6 +32,7 @@ from tqdm import tqdm
 # Import components from separate files
 from gnn import PoseGNN, create_pose_graph
 from transformer import TransformerEncoder
+import visualization as viz
 
 # Configuration constants
 # Use Path objects for better path handling
@@ -41,7 +42,7 @@ NON_VIOLENT_PATH = DATA_PATH / "non-violent/cam1/processed"
 
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 50
+NUM_EPOCHS = 5
 LEARNING_RATE = 0.001
 
 
@@ -436,122 +437,11 @@ def evaluate_model(
     return avg_test_loss, test_auc, optimal_threshold, threshold_metrics
 
 
-def plot_training_metrics(
-    metrics: Dict[str, List[float]],
-    test_auc: float,
-    output_path: Path = Path("training_metrics.png"),
-) -> None:
-    """
-    Plot and save training and validation metrics.
-
-    Args:
-        metrics: Dictionary containing training metrics
-        test_auc: AUC score on test set
-        output_path: Path to save the plot
-    """
-    plt.figure(figsize=(12, 4))
-
-    # Plot loss curves
-    plt.subplot(1, 2, 1)
-    plt.plot(metrics["train_loss"], label="Train Loss")
-    plt.plot(metrics["val_loss"], label="Validation Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.title("Training and Validation Loss")
-
-    # Plot AUC curves
-    plt.subplot(1, 2, 2)
-    plt.plot(metrics["val_auc"], label="Validation AUC")
-    plt.axhline(
-        y=test_auc, color="r", linestyle="--", label=f"Test AUC: {test_auc:.4f}"
-    )
-    plt.xlabel("Epoch")
-    plt.ylabel("AUC")
-    plt.legend()
-    plt.title("Validation AUC")
-
-    plt.tight_layout()
-    plt.savefig(output_path)
-    print(f"Training metrics plot saved to {output_path}")
-
-
-def plot_roc_pr_curves(
-    y_true: np.ndarray,
-    y_score: np.ndarray,
-    threshold: float,
-    output_path: Path = Path("model_performance_curves.png"),
-) -> None:
-    """
-    Plot ROC and Precision-Recall curves with threshold information.
-
-    Args:
-        y_true: Ground truth binary labels
-        y_score: Predicted scores (probabilities)
-        threshold: Optimal classification threshold
-        output_path: Path to save the plot
-    """
-    plt.figure(figsize=(12, 5))
-
-    # ROC Curve
-    plt.subplot(1, 2, 1)
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {roc_auc_score(y_true, y_score):.4f})")
-
-    # Add threshold point
-    threshold_idx = np.argmin(np.abs(thresholds - threshold))
-    plt.plot(
-        fpr[threshold_idx],
-        tpr[threshold_idx],
-        "ro",
-        label=f"Threshold = {threshold:.4f}",
-    )
-
-    plt.plot([0, 1], [0, 1], "k--")
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve")
-    plt.legend(loc="lower right")
-
-    # Precision-Recall Curve
-    plt.subplot(1, 2, 2)
-    precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-
-    # Find closest threshold value in PR curve
-    pr_thresholds = np.append(
-        pr_thresholds, 1.0
-    )  # Add 1.0 to match precision/recall arrays
-    threshold_idx_pr = np.argmin(np.abs(pr_thresholds - threshold))
-
-    plt.plot(recall, precision, label="Precision-Recall Curve")
-    plt.plot(
-        recall[threshold_idx_pr],
-        precision[threshold_idx_pr],
-        "ro",
-        label=f"Threshold = {threshold:.4f}",
-    )
-
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("Recall")
-    plt.ylabel("Precision")
-    plt.title("Precision-Recall Curve")
-    plt.legend(loc="lower left")
-
-    plt.tight_layout()
-    plt.savefig(output_path)
-    print(f"Performance curves saved to {output_path}")
-
-
 def main() -> None:
     """Main function to train and evaluate the violence detection model."""
-    # Use the best available device (GPU, MPS, or CPU)
     device = get_device()
     print(f"Using device: {device}")
 
-    # Verify data paths exist
     if not VIOLENT_PATH.exists():
         print(f"Error: Violent data path does not exist: {VIOLENT_PATH}")
         return
@@ -560,10 +450,8 @@ def main() -> None:
         print(f"Error: Non-violent data path does not exist: {NON_VIOLENT_PATH}")
         return
 
-    # Set sample percentage for data loading (for testing purposes)
-    sample_percentage = 100  # Default: process all data
+    sample_percentage = 1
 
-    # Load and preprocess data
     print("Loading and preprocessing data...")
     try:
         graphs, labels = load_mmpose_data(
@@ -577,16 +465,13 @@ def main() -> None:
         print("No valid graphs were created. Check your data.")
         return
 
-    # Print dataset statistics
     print(f"Total graphs: {len(graphs)}")
     print(f"Positive (violent) samples: {sum(labels)}")
     print(f"Negative (non-violent) samples: {len(labels) - sum(labels)}")
 
-    # Convert labels to tensors and add to graph data
     for i, graph in enumerate(graphs):
         graph.y = torch.tensor([labels[i]], dtype=torch.float)
 
-    # Split data into train, validation, and test sets
     train_graphs, test_graphs = train_test_split(
         graphs, test_size=0.2, random_state=42, stratify=labels
     )
@@ -598,15 +483,12 @@ def main() -> None:
     print(f"Validation graphs: {len(val_graphs)}")
     print(f"Test graphs: {len(test_graphs)}")
 
-    # Create data loaders
     train_loader = DataLoader(train_graphs, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_graphs, batch_size=BATCH_SIZE)
     test_loader = DataLoader(test_graphs, batch_size=BATCH_SIZE)
 
-    # Get input feature dimension from the first graph
     in_channels = train_graphs[0].x.shape[1]
 
-    # Initialize model with GNN and Transformer components
     model = ViolenceDetectionGNN(
         in_channels=in_channels,
         hidden_channels=64,
@@ -616,13 +498,11 @@ def main() -> None:
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    # Train model
     print("Training model...")
     metrics = train_model(
         model, train_loader, val_loader, device, optimizer, num_epochs=NUM_EPOCHS
     )
 
-    # Evaluate on test set
     avg_test_loss, test_auc, optimal_threshold, threshold_metrics = evaluate_model(
         model, test_loader, device
     )
@@ -633,7 +513,6 @@ def main() -> None:
     for metric, value in threshold_metrics.items():
         print(f"  {metric}: {value:.4f}")
 
-    # Save model
     model_path = Path("violence_detection_model.pt")
     torch.save(
         {
@@ -645,10 +524,19 @@ def main() -> None:
     )
     print(f"Model saved to {model_path}")
 
-    # Plot training metrics
-    plot_training_metrics(metrics, test_auc)
+    # Create output directory for plots
+    plots_dir = Path("plots")
+    plots_dir.mkdir(exist_ok=True)
 
-    # Extract all predictions and targets from test set for curve plotting
+    # Create test metrics dictionary for visualization
+    test_metrics = {
+        "loss": avg_test_loss,
+        "auc": test_auc,
+        "f1": threshold_metrics["f1_score"],
+        "threshold": optimal_threshold,
+    }
+
+    # Extract all predictions and targets from test set for visualizations
     all_preds = []
     all_targets = []
     model.eval()
@@ -658,8 +546,71 @@ def main() -> None:
             out = model(batch.x, batch.edge_index, batch.batch)
             all_preds.extend(out.cpu().numpy().flatten())
             all_targets.extend(batch.y.cpu().numpy().flatten())
-
-    plot_roc_pr_curves(np.array(all_targets), np.array(all_preds), optimal_threshold)
+    
+    all_preds = np.array(all_preds)
+    all_targets = np.array(all_targets)
+    
+    # Generate visualizations
+    viz.plot_training_metrics(
+        metrics, 
+        test_metrics,
+        output_path=plots_dir / "training_metrics.png"
+    )
+    
+    viz.plot_classification_metrics(
+        all_targets, 
+        all_preds, 
+        optimal_threshold,
+        output_path=plots_dir / "classification_metrics.png"
+    )
+    
+    viz.plot_learning_curve(
+        metrics,
+        output_path=plots_dir / "learning_curve.png"
+    )
+    
+    # Generate GNN and Transformer visualizations
+    try:
+        viz.visualize_node_embeddings(
+            model,
+            test_loader,
+            device,
+            output_path=plots_dir / "node_embeddings.png"
+        )
+    except Exception as e:
+        print(f"Could not generate node embeddings visualization: {e}")
+    
+    try:
+        viz.visualize_transformer_attention(
+            model,
+            test_loader,
+            device,
+            output_path=plots_dir / "transformer_attention.png"
+        )
+    except Exception as e:
+        print(f"Could not generate transformer attention visualization: {e}")
+    
+    # Sample a pose graph for visualization if available
+    if test_graphs:
+        sample_idx = 0
+        sample_graph = test_graphs[sample_idx]
+        keypoints = sample_graph.x.numpy()
+        
+        # Extract edges as tuples
+        edge_index = sample_graph.edge_index.numpy()
+        edges = [(edge_index[0, i], edge_index[1, i]) for i in range(edge_index.shape[1])]
+        
+        # Get label
+        is_violent = bool(sample_graph.y.item() > 0.5)
+        
+        viz.plot_pose_graph(
+            keypoints,
+            edges,
+            is_violent,
+            output_path=plots_dir / "sample_pose_graph.png"
+        )
+    
+    print(f"All visualizations saved to {plots_dir}")
 
 
 if __name__ == "__main__":

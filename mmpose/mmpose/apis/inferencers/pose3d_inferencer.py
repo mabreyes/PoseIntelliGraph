@@ -22,6 +22,7 @@ from mmpose.apis import (
 )
 from mmpose.registry import INFERENCERS
 from mmpose.structures import PoseDataSample, merge_data_samples
+
 from .base_mmpose_inferencer import BaseMMPoseInferencer
 from .pose2d_inferencer import Pose2DInferencer
 
