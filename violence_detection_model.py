@@ -12,7 +12,6 @@ import json
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -29,10 +28,11 @@ from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 
+import visualization as viz
+
 # Import components from separate files
 from gnn import PoseGNN, create_pose_graph
 from transformer import TransformerEncoder
-import visualization as viz
 
 # Configuration constants
 # Use Path objects for better path handling
@@ -42,7 +42,7 @@ NON_VIOLENT_PATH = DATA_PATH / "non-violent/cam1/processed"
 
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 5
+NUM_EPOCHS = 50
 LEARNING_RATE = 0.001
 
 
@@ -450,7 +450,7 @@ def main() -> None:
         print(f"Error: Non-violent data path does not exist: {NON_VIOLENT_PATH}")
         return
 
-    sample_percentage = 1
+    sample_percentage = 100
 
     print("Loading and preprocessing data...")
     try:
@@ -546,70 +546,46 @@ def main() -> None:
             out = model(batch.x, batch.edge_index, batch.batch)
             all_preds.extend(out.cpu().numpy().flatten())
             all_targets.extend(batch.y.cpu().numpy().flatten())
-    
+
     all_preds = np.array(all_preds)
     all_targets = np.array(all_targets)
-    
+
     # Generate visualizations
     viz.plot_training_metrics(
-        metrics, 
-        test_metrics,
-        output_path=plots_dir / "training_metrics.png"
+        metrics, test_metrics, output_path=plots_dir / "training_metrics.png"
     )
-    
+
     viz.plot_classification_metrics(
-        all_targets, 
-        all_preds, 
+        all_targets,
+        all_preds,
         optimal_threshold,
-        output_path=plots_dir / "classification_metrics.png"
+        output_path=plots_dir / "classification_metrics.png",
     )
-    
-    viz.plot_learning_curve(
-        metrics,
-        output_path=plots_dir / "learning_curve.png"
-    )
-    
-    # Generate GNN and Transformer visualizations
-    try:
-        viz.visualize_node_embeddings(
-            model,
-            test_loader,
-            device,
-            output_path=plots_dir / "node_embeddings.png"
-        )
-    except Exception as e:
-        print(f"Could not generate node embeddings visualization: {e}")
-    
-    try:
-        viz.visualize_transformer_attention(
-            model,
-            test_loader,
-            device,
-            output_path=plots_dir / "transformer_attention.png"
-        )
-    except Exception as e:
-        print(f"Could not generate transformer attention visualization: {e}")
-    
+
+    viz.plot_learning_curve(metrics, output_path=plots_dir / "learning_curve.png")
+
     # Sample a pose graph for visualization if available
     if test_graphs:
         sample_idx = 0
         sample_graph = test_graphs[sample_idx]
         keypoints = sample_graph.x.numpy()
-        
+
         # Extract edges as tuples
         edge_index = sample_graph.edge_index.numpy()
-        edges = [(edge_index[0, i], edge_index[1, i]) for i in range(edge_index.shape[1])]
-        
+        edges = [
+            (edge_index[0, i], edge_index[1, i]) for i in range(edge_index.shape[1])
+        ]
+
         # Get label
         is_violent = bool(sample_graph.y.item() > 0.5)
-        
+
         viz.plot_pose_graph(
             keypoints,
             edges,
             is_violent,
-            output_path=plots_dir / "sample_pose_graph.png"
+            output_path=plots_dir / "sample_pose_graph.png",
         )
-    
+
     print(f"All visualizations saved to {plots_dir}")
 
 

@@ -5,7 +5,7 @@ Graph Neural Network component for the violence detection system.
 This module contains the GNN model that processes human pose data
 represented as graphs.
 """
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import torch
@@ -16,10 +16,10 @@ from torch_geometric.nn import (
     GATConv,
     GCNConv,
     GINConv,
-    global_mean_pool,
-    global_max_pool,
+    JumpingKnowledge,
     global_add_pool,
-    JumpingKnowledge
+    global_max_pool,
+    global_mean_pool,
 )
 
 
@@ -29,7 +29,7 @@ class PoseGNN(nn.Module):
 
     This model processes pose keypoints represented as graphs and outputs
     feature embeddings for further processing.
-    
+
     The architecture incorporates multiple state-of-the-art techniques:
     - Graph Attention Networks (GAT) [Veličković et al., 2018]
     - Graph Isomorphism Networks (GIN) [Xu et al., 2019]
@@ -39,8 +39,8 @@ class PoseGNN(nn.Module):
     """
 
     def __init__(
-        self, 
-        in_channels: int, 
+        self,
+        in_channels: int,
         hidden_channels: int = 64,
         dropout: float = 0.2,
         heads: int = 4,
@@ -59,28 +59,25 @@ class PoseGNN(nn.Module):
                     ("cat", "max", or "lstm")
         """
         super(PoseGNN, self).__init__()
-        
+
         # Track model hyperparameters
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
         self.dropout = dropout
         self.heads = heads
-        
+
         # Initial layer: GCN for capturing basic structural information
         # GCN is shown to be effective for initial feature transformation
         # [Kipf & Welling, 2017]
         self.conv1 = GCNConv(in_channels, hidden_channels)
-        
+
         # Middle layer: GAT for attentive message passing
         # GAT can dynamically weight neighbor importance
         # [Veličković et al., 2018]
         self.conv2 = GATConv(
-            hidden_channels, 
-            hidden_channels // heads,
-            heads=heads, 
-            dropout=dropout
+            hidden_channels, hidden_channels // heads, heads=heads, dropout=dropout
         )
-        
+
         # Final layer: GIN for maximally powerful graph representation
         # GIN has been proven to be as powerful as the Weisfeiler-Lehman test
         # [Xu et al., 2019]
@@ -91,13 +88,13 @@ class PoseGNN(nn.Module):
             nn.Linear(hidden_channels * 2, hidden_channels),
         )
         self.conv3 = GINConv(nn_layer, train_eps=True)
-        
+
         # Batch normalization for better training stability
         # [Ioffe & Szegedy, 2015]
         self.batch_norm1 = nn.BatchNorm1d(hidden_channels)
         self.batch_norm2 = nn.BatchNorm1d(hidden_channels)
         self.batch_norm3 = nn.BatchNorm1d(hidden_channels)
-        
+
         # JumpingKnowledge for combining features across layers
         # This preserves information from earlier layers
         # [Xu et al., 2018]
@@ -106,7 +103,7 @@ class PoseGNN(nn.Module):
             self.output_dim = hidden_channels * 3
         else:
             self.output_dim = hidden_channels
-            
+
         # Final projection layer
         self.project = nn.Linear(self.output_dim, hidden_channels)
         self.out_channels = hidden_channels
@@ -127,21 +124,21 @@ class PoseGNN(nn.Module):
         """
         # Track representations from each layer for JumpingKnowledge
         layer_outputs = []
-        
+
         # Layer 1: GCN with residual connection
         x1 = self.conv1(x, edge_index)
         x1 = self.batch_norm1(x1)
         x1 = F.relu(x1)
         x1 = F.dropout(x1, p=self.dropout, training=self.training)
         layer_outputs.append(x1)
-        
+
         # Layer 2: GAT
         x2 = self.conv2(x1, edge_index)
         x2 = self.batch_norm2(x2)
         x2 = F.relu(x2)
         x2 = F.dropout(x2, p=self.dropout, training=self.training)
         layer_outputs.append(x2)
-        
+
         # Layer 3: GIN with residual connection to layer 1
         # Residual connections help with gradient flow
         # [He et al., 2016]
@@ -149,29 +146,29 @@ class PoseGNN(nn.Module):
         x3 = self.batch_norm3(x3)
         x3 = F.relu(x3)
         layer_outputs.append(x3)
-        
+
         # Combine representations from all layers
         x = self.jk(layer_outputs)
-        
+
         # Multi-scale pooling: captures both local and global graph properties
         # [Ying et al., 2018]
         x_mean = global_mean_pool(x, batch)
         x_max = global_max_pool(x, batch)
         x_sum = global_add_pool(x, batch)
-        
+
         # Combine different pooling strategies
         x_pooled = (x_mean + x_max + x_sum) / 3.0
-        
+
         # Final projection
         x_final = self.project(x_pooled)
-        
+
         return x_final
 
 
 def create_pose_graph(keypoints: np.ndarray, edge_attr: bool = True) -> Optional[Data]:
     """
     Convert keypoints into a graph representation for GNN processing.
-    
+
     This enhanced version supports edge attributes and uses anatomical knowledge
     to create a more meaningful graph structure.
 
@@ -190,22 +187,23 @@ def create_pose_graph(keypoints: np.ndarray, edge_attr: bool = True) -> Optional
         return None
 
     num_nodes = len(valid_keypoints)
-    
+
     # Node features are the 2D coordinates
     x = torch.tensor(valid_keypoints, dtype=torch.float)
-    
+
     # Create edges - connect keypoints based on human body structure
-    # For more sophisticated implementation, we could use a predefined skeleton structure
+    # For more sophisticated implementation,
+    # we could use a predefined skeleton structure
     # For now, we'll use a fully connected graph
     edge_list = []
     edge_features = []
-    
+
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
             # Add bidirectional edges
             edge_list.append([i, j])
             edge_list.append([j, i])
-            
+
             if edge_attr:
                 # Compute distance between joints as edge feature
                 dist = np.linalg.norm(valid_keypoints[i] - valid_keypoints[j])
@@ -216,12 +214,12 @@ def create_pose_graph(keypoints: np.ndarray, edge_attr: bool = True) -> Optional
         return None
 
     edge_index = torch.tensor(edge_list, dtype=torch.long).t().contiguous()
-    
+
     # Create PyTorch Geometric Data object
     data = Data(x=x, edge_index=edge_index)
-    
+
     # Add edge features if requested
     if edge_attr and edge_features:
         data.edge_attr = torch.tensor(edge_features, dtype=torch.float)
-    
+
     return data

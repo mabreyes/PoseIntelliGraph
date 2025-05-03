@@ -8,4 +8,4 @@ export PYTORCH_ENABLE_MPS_FALLBACK=1
 # Run the model
 python violence_detection_model.py
 
-echo "Model execution completed" 
+echo "Model execution completed"

@@ -5,9 +5,10 @@ Transformer component for the violence detection system.
 This module contains the transformer model that processes embeddings
 from the GNN before final classification.
 """
+from typing import Optional
+
 import torch
 import torch.nn as nn
-from typing import Optional, List
 
 
 class TransformerEncoder(nn.Module):
@@ -41,7 +42,7 @@ class TransformerEncoder(nn.Module):
         self.input_dim = input_dim
         self.num_heads = num_heads
         self.num_layers = num_layers
-        
+
         # Add batch dimension info for the transformer
         self.position_embedding = nn.Parameter(torch.zeros(1, 1, input_dim))
 
@@ -66,7 +67,7 @@ class TransformerEncoder(nn.Module):
             self.out_projection = nn.Linear(input_dim, output_dim)
 
         self.out_channels = output_dim
-        
+
         # For storing attention weights
         self.attention_weights = None
 
@@ -97,50 +98,52 @@ class TransformerEncoder(nn.Module):
             x = self.out_projection(x)
 
         return x
-    
+
     def get_attention_weights(self, x: torch.Tensor) -> Optional[torch.Tensor]:
         """
         Extract attention weights from the transformer for visualization.
-        
+
         This function is a workaround since PyTorch's TransformerEncoder doesn't
         expose attention weights directly. We create a mock attention tensor for
         visualization purposes.
-        
+
         Args:
             x: Input tensor [batch_size, input_dim]
-            
+
         Returns:
             Tensor containing attention weights or None if not available
         """
         # PyTorch doesn't expose attention weights directly from TransformerEncoder
         # We'll create a simplified representation for visualization purposes
-        batch_size = x.shape[0]
-        
+        x.shape[0]
+
         # For actual implementation, you would need to:
         # 1. Register hooks to capture attention weights during forward pass
         # 2. Or modify PyTorch's TransformerEncoder to expose attention weights
-        
+
         # This is a placeholder implementation that creates mock attention data
         # based on input similarity
         try:
             # Add sequence dimension
             x = x.unsqueeze(1)  # [batch_size, 1, input_dim]
-            
+
             # Normalize inputs
             x_norm = torch.nn.functional.normalize(x, p=2, dim=2)
-            
+
             # Create mock attention weights based on input similarity
             # This is just for visualization - not actual attention
             mock_attention = torch.bmm(x_norm, x_norm.transpose(1, 2))
-            
+
             # Expand to match expected dimensions for multiple heads
             # [batch_size, num_heads, seq_len, seq_len]
-            mock_attention = mock_attention.unsqueeze(1).expand(-1, self.num_heads, -1, -1)
-            
+            mock_attention = mock_attention.unsqueeze(1).expand(
+                -1, self.num_heads, -1, -1
+            )
+
             return mock_attention
         except Exception:
             return None
-        
+
     def __repr__(self) -> str:
         """String representation of the transformer encoder."""
         return (
