@@ -234,7 +234,7 @@ if [ "$DRY_RUN" = true ]; then
   echo "Total videos: $TOTAL_VIDEOS"
   echo "Would process: $WOULD_PROCESS"
   echo "Would skip: $SKIPPED"
-  
+
   if [ ${#WOULD_PROCESS_FILES[@]} -gt 0 ]; then
     echo ""
     echo "List of videos that would be processed:"
@@ -242,7 +242,7 @@ if [ "$DRY_RUN" = true ]; then
       echo "  - $VIDEO"
     done
   fi
-  
+
   if [ ${#MISSING_FILES[@]} -gt 0 ]; then
     echo ""
     echo "List of videos with missing or incomplete processing:"
@@ -253,7 +253,7 @@ if [ "$DRY_RUN" = true ]; then
 else
   echo "All videos processed. Results are in $OUTPUT_DIR directory."
   echo "Total videos: $TOTAL_VIDEOS, Processed: $((CURRENT - SKIPPED)), Skipped: $SKIPPED"
-  
+
   if [ ${#PROCESSED_FILES[@]} -gt 0 ]; then
     echo ""
     echo "List of videos processed in this session:"
@@ -270,7 +270,7 @@ if [ "$VERBOSE" = true ] || [ "$CHECK_MISSING" = true ]; then
   echo "------------------------------"
   INCOMPLETE=0
   INCOMPLETE_FILES=()
-  
+
   for EXT in "${VIDEO_EXTENSIONS[@]}"; do
     for VIDEO in $(find "$VIDEO_DIR" -maxdepth 1 -name "$EXT" 2>/dev/null); do
       if [ -f "$VIDEO" ]; then
@@ -299,7 +299,7 @@ if [ "$VERBOSE" = true ] || [ "$CHECK_MISSING" = true ]; then
   else
     echo "  Found $INCOMPLETE videos with inconsistent processing status."
     echo "  Consider using --force to reprocess these files."
-    
+
     echo ""
     echo "  List of incompletely processed videos:"
     for VIDEO in "${INCOMPLETE_FILES[@]}"; do
@@ -312,22 +312,22 @@ fi
 if [ "$CHECK_MISSING" = true ] || [ "$DRY_RUN" = true ]; then
   echo ""
   echo "Checking specific videos of interest..."
-  
+
   # List of specific videos to check
   VIDEOS_TO_CHECK=("71.mp4" "98.mp4")
-  
+
   for VIDEO_NAME in "${VIDEOS_TO_CHECK[@]}"; do
     VIDEO_PATH="$VIDEO_DIR/$VIDEO_NAME"
     if [ -f "$VIDEO_PATH" ]; then
       FILENAME="${VIDEO_NAME%.*}"
       VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.mp4"
       JSON_FILE="$OUTPUT_DIR/results_${FILENAME}.json"
-      
+
       echo "  Checking $VIDEO_NAME:"
       echo "    - Original video exists: YES"
       echo "    - Processed video exists: $([ -f "$VIS_VIDEO" ] && echo "YES" || echo "NO")"
       echo "    - JSON results exist: $([ -f "$JSON_FILE" ] && echo "YES" || echo "NO")"
-      
+
       if [[ ! -f "$VIS_VIDEO" || ! -f "$JSON_FILE" ]]; then
         echo "    - Status: NEEDS PROCESSING"
       else

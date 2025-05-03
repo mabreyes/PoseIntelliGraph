@@ -12,9 +12,14 @@ from mmcv.transforms.utils import cache_randomness
 from scipy.stats import truncnorm
 
 from mmpose.registry import TRANSFORMS
-from mmpose.structures.bbox import (bbox_clip_border, bbox_corner2xyxy,
-                                    bbox_xyxy2corner, get_pers_warp_matrix,
-                                    get_udp_warp_matrix, get_warp_matrix,)
+from mmpose.structures.bbox import (
+    bbox_clip_border,
+    bbox_corner2xyxy,
+    bbox_xyxy2corner,
+    get_pers_warp_matrix,
+    get_udp_warp_matrix,
+    get_warp_matrix,
+)
 from mmpose.structures.keypoint import keypoint_clip_border
 
 

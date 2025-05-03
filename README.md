@@ -261,7 +261,7 @@ The violence detection model uses a multi-component architecture:
    - Converts raw pose data into meaningful embeddings
 
 2. **Transformer Component**:
-   - Takes embeddings from the GNN 
+   - Takes embeddings from the GNN
    - Applies self-attention to capture contextual relationships
    - Enhances feature representation through attention mechanisms
 

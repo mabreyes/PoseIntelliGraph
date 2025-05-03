@@ -13,15 +13,23 @@ import mmengine
 import numpy as np
 from mmengine.logging import print_log
 
-from mmpose.apis import (_track_by_iou, _track_by_oks,
-                         convert_keypoint_definition, extract_pose_sequence,
-                         inference_pose_lifter_model, inference_topdown,
-                         init_model,)
+from mmpose.apis import (
+    _track_by_iou,
+    _track_by_oks,
+    convert_keypoint_definition,
+    extract_pose_sequence,
+    inference_pose_lifter_model,
+    inference_topdown,
+    init_model,
+)
 from mmpose.models.pose_estimators import PoseLifter
 from mmpose.models.pose_estimators.topdown import TopdownPoseEstimator
 from mmpose.registry import VISUALIZERS
-from mmpose.structures import (PoseDataSample, merge_data_samples,
-                               split_instances,)
+from mmpose.structures import (
+    PoseDataSample,
+    merge_data_samples,
+    split_instances,
+)
 from mmpose.utils import adapt_mmdet_pipeline
 
 try:

@@ -5,7 +5,8 @@ import numpy as np
 
 from mmpose.codecs.base import BaseKeypointCodec
 from mmpose.codecs.utils.gaussian_heatmap import (
-    generate_unbiased_gaussian_heatmaps,)
+    generate_unbiased_gaussian_heatmaps,
+)
 from mmpose.codecs.utils.post_processing import get_heatmap_maximum
 from mmpose.registry import KEYPOINT_CODECS
 

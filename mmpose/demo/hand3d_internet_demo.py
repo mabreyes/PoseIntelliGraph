@@ -14,8 +14,11 @@ from mmengine.logging import print_log
 
 from mmpose.apis import inference_topdown, init_model
 from mmpose.registry import VISUALIZERS
-from mmpose.structures import (PoseDataSample, merge_data_samples,
-                               split_instances,)
+from mmpose.structures import (
+    PoseDataSample,
+    merge_data_samples,
+    split_instances,
+)
 
 
 def parse_args():

@@ -15,8 +15,11 @@ from mmengine.logging import print_log
 
 from mmpose.apis import inference_topdown, init_model
 from mmpose.registry import VISUALIZERS
-from mmpose.structures import (PoseDataSample, merge_data_samples,
-                               split_instances,)
+from mmpose.structures import (
+    PoseDataSample,
+    merge_data_samples,
+    split_instances,
+)
 from mmpose.utils import adapt_mmdet_pipeline
 from mmpose.visualization import Pose3dLocalVisualizer
 

@@ -4,8 +4,17 @@ import logging
 import mimetypes
 import os
 from collections import defaultdict
-from typing import (Callable, Dict, Generator, Iterable, List, Optional,
-                    Sequence, Tuple, Union,)
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import cv2
 import mmcv
@@ -14,8 +23,12 @@ import numpy as np
 import torch.nn as nn
 from mmengine.config import Config, ConfigDict
 from mmengine.dataset import Compose
-from mmengine.fileio import (get_file_backend, isdir, join_path,
-                             list_dir_or_file,)
+from mmengine.fileio import (
+    get_file_backend,
+    isdir,
+    join_path,
+    list_dir_or_file,
+)
 from mmengine.infer.infer import BaseInferencer, ModelType
 from mmengine.logging import print_log
 from mmengine.registry import init_default_scope

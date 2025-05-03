@@ -12,12 +12,22 @@ from torch.nn import GroupNorm
 from torch.optim import Adam
 
 from mmpose.codecs import EDPoseLabel
-from mmpose.datasets import (BottomupRandomChoiceResize, BottomupRandomCrop,
-                             CocoDataset, LoadImage, PackPoseInputs,
-                             RandomFlip,)
+from mmpose.datasets import (
+    BottomupRandomChoiceResize,
+    BottomupRandomCrop,
+    CocoDataset,
+    LoadImage,
+    PackPoseInputs,
+    RandomFlip,
+)
 from mmpose.evaluation import CocoMetric
-from mmpose.models import (BottomupPoseEstimator, ChannelMapper, EDPoseHead,
-                           PoseDataPreprocessor, ResNet,)
+from mmpose.models import (
+    BottomupPoseEstimator,
+    ChannelMapper,
+    EDPoseHead,
+    PoseDataPreprocessor,
+    ResNet,
+)
 from mmpose.models.utils import FrozenBatchNorm2d
 
 # runtime

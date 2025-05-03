@@ -37,7 +37,7 @@ class PoseGNN(nn.Module):
         self.conv1 = GCNConv(in_channels, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        
+
         # Output dimension is hidden_channels after pooling
         self.out_channels = hidden_channels
 
@@ -69,7 +69,7 @@ class PoseGNN(nn.Module):
 
         # Global mean pooling (graph-level output)
         x = global_mean_pool(x, batch)
-        
+
         return x
 
 
@@ -108,4 +108,4 @@ def create_pose_graph(keypoints: np.ndarray) -> Optional[Data]:
     edge_index = torch.tensor(edge_list, dtype=torch.long).t().contiguous()
 
     # Create PyTorch Geometric Data object
-    return Data(x=x, edge_index=edge_index) 
+    return Data(x=x, edge_index=edge_index)

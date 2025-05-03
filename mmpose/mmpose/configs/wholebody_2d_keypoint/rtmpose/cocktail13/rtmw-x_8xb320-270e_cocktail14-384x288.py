@@ -14,22 +14,46 @@ from torch.nn import SiLU, SyncBatchNorm
 from torch.optim import AdamW
 
 from mmpose.codecs import SimCCLabel
-from mmpose.datasets import (AicDataset, CocoWholeBodyDataset, COFWDataset,
-                             CombinedDataset, CrowdPoseDataset,
-                             Face300WDataset, GenerateTarget,
-                             GetBBoxCenterScale, HalpeDataset,
-                             HumanArt21Dataset, InterHand2DDoubleDataset,
-                             JhmdbDataset, KeypointConverter, LapaDataset,
-                             LoadImage, MpiiDataset, PackPoseInputs,
-                             PoseTrack18Dataset, RandomFlip, RandomHalfBody,
-                             TopdownAffine, UBody2dDataset, WFLWDataset,)
+from mmpose.datasets import (
+    AicDataset,
+    CocoWholeBodyDataset,
+    COFWDataset,
+    CombinedDataset,
+    CrowdPoseDataset,
+    Face300WDataset,
+    GenerateTarget,
+    GetBBoxCenterScale,
+    HalpeDataset,
+    HumanArt21Dataset,
+    InterHand2DDoubleDataset,
+    JhmdbDataset,
+    KeypointConverter,
+    LapaDataset,
+    LoadImage,
+    MpiiDataset,
+    PackPoseInputs,
+    PoseTrack18Dataset,
+    RandomFlip,
+    RandomHalfBody,
+    TopdownAffine,
+    UBody2dDataset,
+    WFLWDataset,
+)
 from mmpose.datasets.transforms.common_transforms import (
-    Albumentation, PhotometricDistortion, RandomBBoxTransform,)
+    Albumentation,
+    PhotometricDistortion,
+    RandomBBoxTransform,
+)
 from mmpose.engine.hooks import ExpMomentumEMA
 from mmpose.evaluation import CocoWholeBodyMetric
-from mmpose.models import (CSPNeXt, CSPNeXtPAFPN, KLDiscretLoss,
-                           PoseDataPreprocessor, RTMWHead,
-                           TopdownPoseEstimator,)
+from mmpose.models import (
+    CSPNeXt,
+    CSPNeXtPAFPN,
+    KLDiscretLoss,
+    PoseDataPreprocessor,
+    RTMWHead,
+    TopdownPoseEstimator,
+)
 
 # common setting
 num_keypoints = 133

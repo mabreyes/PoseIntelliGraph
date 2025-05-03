@@ -13,8 +13,13 @@ from mmengine.model import revert_sync_batchnorm
 from mmengine.registry import init_default_scope
 from mmengine.structures import InstanceData
 
-from mmpose.apis import (_track_by_iou, _track_by_oks, collate_pose_sequence,
-                         convert_keypoint_definition, extract_pose_sequence,)
+from mmpose.apis import (
+    _track_by_iou,
+    _track_by_oks,
+    collate_pose_sequence,
+    convert_keypoint_definition,
+    extract_pose_sequence,
+)
 from mmpose.registry import INFERENCERS
 from mmpose.structures import PoseDataSample, merge_data_samples
 from .base_mmpose_inferencer import BaseMMPoseInferencer

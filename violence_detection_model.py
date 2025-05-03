@@ -17,7 +17,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve, f1_score, confusion_matrix
+from sklearn.metrics import (
+    roc_auc_score,
+    roc_curve,
+    precision_recall_curve,
+    f1_score,
+    confusion_matrix,
+)
 from sklearn.model_selection import train_test_split
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
@@ -35,7 +41,7 @@ NON_VIOLENT_PATH = DATA_PATH / "non-violent/cam1/processed"
 
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 1
+NUM_EPOCHS = 50
 LEARNING_RATE = 0.001
 
 
@@ -50,11 +56,11 @@ class ViolenceDetectionGNN(nn.Module):
     """
 
     def __init__(
-        self, 
-        in_channels: int, 
+        self,
+        in_channels: int,
         hidden_channels: int = 64,
         transformer_heads: int = 4,
-        transformer_layers: int = 2
+        transformer_layers: int = 2,
     ):
         """
         Initialize the full model.
@@ -67,18 +73,18 @@ class ViolenceDetectionGNN(nn.Module):
             transformer_layers: Number of transformer layers
         """
         super(ViolenceDetectionGNN, self).__init__()
-        
+
         # GNN component
         self.gnn = PoseGNN(in_channels, hidden_channels)
-        
+
         # Transformer component
         self.transformer = TransformerEncoder(
             input_dim=hidden_channels,
             num_heads=transformer_heads,
             num_layers=transformer_layers,
-            output_dim=hidden_channels
+            output_dim=hidden_channels,
         )
-        
+
         # Final prediction layers
         self.lin1 = nn.Linear(hidden_channels, hidden_channels // 2)
         self.lin2 = nn.Linear(hidden_channels // 2, 1)
@@ -99,10 +105,10 @@ class ViolenceDetectionGNN(nn.Module):
         """
         # Process through GNN to get graph embeddings
         x = self.gnn(x, edge_index, batch)
-        
+
         # Process through transformer to capture contextual patterns
         x = self.transformer(x)
-        
+
         # Final predictions
         x = self.lin1(x)
         x = F.relu(x)
@@ -114,8 +120,7 @@ class ViolenceDetectionGNN(nn.Module):
 
 
 def load_mmpose_data(
-    violent_path: Path, non_violent_path: Path, 
-    sample_percentage: int = 100
+    violent_path: Path, non_violent_path: Path, sample_percentage: int = 100
 ) -> Tuple[List[Data], List[float]]:
     """
     Load MMPose JSON files and convert them to graph data.
@@ -131,7 +136,7 @@ def load_mmpose_data(
     # Validate sample percentage
     if not 1 <= sample_percentage <= 100:
         raise ValueError("sample_percentage must be between 1 and 100")
-        
+
     all_graphs = []
     all_labels = []
 
@@ -139,14 +144,16 @@ def load_mmpose_data(
     violent_files = list(violent_path.glob("*.json"))
     if not violent_files:
         raise ValueError(f"No JSON files found in violent directory: {violent_path}")
-    
+
     print(f"Found {len(violent_files)} violent JSON files")
-    
+
     # Calculate number of files to process based on percentage
     num_violent_files = max(1, int(len(violent_files) * sample_percentage / 100))
-    
+
     # Process violent samples
-    for json_file in tqdm(violent_files[:num_violent_files], desc="Processing violent samples"):
+    for json_file in tqdm(
+        violent_files[:num_violent_files], desc="Processing violent samples"
+    ):
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
@@ -171,13 +178,15 @@ def load_mmpose_data(
     # Process non-violent data
     non_violent_files = list(non_violent_path.glob("*.json"))
     if not non_violent_files:
-        raise ValueError(f"No JSON files found in non-violent directory: {non_violent_path}")
-    
+        raise ValueError(
+            f"No JSON files found in non-violent directory: {non_violent_path}"
+        )
+
     print(f"Found {len(non_violent_files)} non-violent JSON files")
 
     # Calculate number of files to process based on percentage
     num_nonviolent_files = max(1, int(len(non_violent_files) * sample_percentage / 100))
-    
+
     # Process non-violent samples
     for json_file in tqdm(
         non_violent_files[:num_nonviolent_files], desc="Processing non-violent samples"
@@ -316,54 +325,56 @@ def get_device() -> torch.device:
         return torch.device("cpu")
 
 
-def find_optimal_threshold(y_true: np.ndarray, y_score: np.ndarray) -> Tuple[float, Dict[str, float]]:
+def find_optimal_threshold(
+    y_true: np.ndarray, y_score: np.ndarray
+) -> Tuple[float, Dict[str, float]]:
     """
     Calculate the optimal classification threshold using multiple methods.
-    
+
     Args:
         y_true: Ground truth binary labels
         y_score: Predicted scores (probabilities)
-        
+
     Returns:
         Tuple of (optimal threshold, dictionary of metrics at that threshold)
     """
     fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    
+
     # Calculate Youden's J statistic (J = Sensitivity + Specificity - 1)
     j_scores = tpr - fpr
     optimal_idx_j = np.argmax(j_scores)
     optimal_threshold_j = thresholds[optimal_idx_j]
-    
+
     # Calculate distance to (0,1) point in ROC space
-    distances = np.sqrt((1 - tpr) ** 2 + fpr ** 2)
+    distances = np.sqrt((1 - tpr) ** 2 + fpr**2)
     optimal_idx_d = np.argmin(distances)
     optimal_threshold_d = thresholds[optimal_idx_d]
-    
+
     # Calculate F1 score at different thresholds
     precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-    
+
     # Calculate F1 for all possible thresholds
     f1_scores = []
     for t in thresholds:
         y_pred = (y_score >= t).astype(int)
         f1 = f1_score(y_true, y_pred)
         f1_scores.append(f1)
-    
+
     optimal_idx_f1 = np.argmax(f1_scores)
     optimal_threshold_f1 = thresholds[optimal_idx_f1]
-    
+
     # Choose Youden's J as the primary method (most common in academic literature)
     optimal_threshold = optimal_threshold_j
-    
+
     # Calculate confusion matrix at optimal threshold
     y_pred = (y_score >= optimal_threshold).astype(int)
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    
+
     # Calculate various metrics at the optimal threshold
     sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
     precision_val = tp / (tp + fp) if (tp + fp) > 0 else 0
-    
+
     # Create metrics dictionary
     metrics = {
         "threshold_j": optimal_threshold_j,
@@ -373,9 +384,9 @@ def find_optimal_threshold(y_true: np.ndarray, y_score: np.ndarray) -> Tuple[flo
         "specificity": specificity,
         "precision": precision_val,
         "f1_score": f1_scores[optimal_idx_j],
-        "youdens_j": j_scores[optimal_idx_j]
+        "youdens_j": j_scores[optimal_idx_j],
     }
-    
+
     return optimal_threshold, metrics
 
 
@@ -416,7 +427,7 @@ def evaluate_model(
 
     avg_test_loss = test_loss / len(test_loader.dataset)
     test_auc = roc_auc_score(all_targets, all_preds)
-    
+
     # Find optimal classification threshold
     optimal_threshold, threshold_metrics = find_optimal_threshold(
         np.array(all_targets), np.array(all_preds)
@@ -466,14 +477,14 @@ def plot_training_metrics(
 
 
 def plot_roc_pr_curves(
-    y_true: np.ndarray, 
-    y_score: np.ndarray, 
+    y_true: np.ndarray,
+    y_score: np.ndarray,
     threshold: float,
-    output_path: Path = Path("model_performance_curves.png")
+    output_path: Path = Path("model_performance_curves.png"),
 ) -> None:
     """
     Plot ROC and Precision-Recall curves with threshold information.
-    
+
     Args:
         y_true: Ground truth binary labels
         y_score: Predicted scores (probabilities)
@@ -481,44 +492,54 @@ def plot_roc_pr_curves(
         output_path: Path to save the plot
     """
     plt.figure(figsize=(12, 5))
-    
+
     # ROC Curve
     plt.subplot(1, 2, 1)
     fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {roc_auc_score(y_true, y_score):.4f})')
-    
+    plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {roc_auc_score(y_true, y_score):.4f})")
+
     # Add threshold point
     threshold_idx = np.argmin(np.abs(thresholds - threshold))
-    plt.plot(fpr[threshold_idx], tpr[threshold_idx], 'ro', 
-             label=f'Threshold = {threshold:.4f}')
-    
-    plt.plot([0, 1], [0, 1], 'k--')
+    plt.plot(
+        fpr[threshold_idx],
+        tpr[threshold_idx],
+        "ro",
+        label=f"Threshold = {threshold:.4f}",
+    )
+
+    plt.plot([0, 1], [0, 1], "k--")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
     plt.legend(loc="lower right")
-    
+
     # Precision-Recall Curve
     plt.subplot(1, 2, 2)
     precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-    
+
     # Find closest threshold value in PR curve
-    pr_thresholds = np.append(pr_thresholds, 1.0)  # Add 1.0 to match precision/recall arrays
+    pr_thresholds = np.append(
+        pr_thresholds, 1.0
+    )  # Add 1.0 to match precision/recall arrays
     threshold_idx_pr = np.argmin(np.abs(pr_thresholds - threshold))
-    
-    plt.plot(recall, precision, label='Precision-Recall Curve')
-    plt.plot(recall[threshold_idx_pr], precision[threshold_idx_pr], 'ro',
-             label=f'Threshold = {threshold:.4f}')
-    
+
+    plt.plot(recall, precision, label="Precision-Recall Curve")
+    plt.plot(
+        recall[threshold_idx_pr],
+        precision[threshold_idx_pr],
+        "ro",
+        label=f"Threshold = {threshold:.4f}",
+    )
+
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Precision-Recall Curve')
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title("Precision-Recall Curve")
     plt.legend(loc="lower left")
-    
+
     plt.tight_layout()
     plt.savefig(output_path)
     print(f"Performance curves saved to {output_path}")
@@ -534,18 +555,20 @@ def main() -> None:
     if not VIOLENT_PATH.exists():
         print(f"Error: Violent data path does not exist: {VIOLENT_PATH}")
         return
-        
+
     if not NON_VIOLENT_PATH.exists():
         print(f"Error: Non-violent data path does not exist: {NON_VIOLENT_PATH}")
         return
 
     # Set sample percentage for data loading (for testing purposes)
-    sample_percentage = 1  # Default: process all data
+    sample_percentage = 100  # Default: process all data
 
     # Load and preprocess data
     print("Loading and preprocessing data...")
     try:
-        graphs, labels = load_mmpose_data(VIOLENT_PATH, NON_VIOLENT_PATH, sample_percentage)
+        graphs, labels = load_mmpose_data(
+            VIOLENT_PATH, NON_VIOLENT_PATH, sample_percentage
+        )
     except ValueError as e:
         print(f"Error loading data: {e}")
         return
@@ -588,9 +611,9 @@ def main() -> None:
         in_channels=in_channels,
         hidden_channels=64,
         transformer_heads=4,
-        transformer_layers=2
+        transformer_layers=2,
     ).to(device)
-    
+
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     # Train model
@@ -600,7 +623,9 @@ def main() -> None:
     )
 
     # Evaluate on test set
-    avg_test_loss, test_auc, optimal_threshold, threshold_metrics = evaluate_model(model, test_loader, device)
+    avg_test_loss, test_auc, optimal_threshold, threshold_metrics = evaluate_model(
+        model, test_loader, device
+    )
     print(f"Test Loss: {avg_test_loss:.4f}")
     print(f"Test AUC: {test_auc:.4f}")
     print(f"Optimal classification threshold: {optimal_threshold:.4f}")
@@ -610,16 +635,19 @@ def main() -> None:
 
     # Save model
     model_path = Path("violence_detection_model.pt")
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'threshold': optimal_threshold,
-        'metrics': threshold_metrics
-    }, model_path)
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "threshold": optimal_threshold,
+            "metrics": threshold_metrics,
+        },
+        model_path,
+    )
     print(f"Model saved to {model_path}")
 
     # Plot training metrics
     plot_training_metrics(metrics, test_auc)
-    
+
     # Extract all predictions and targets from test set for curve plotting
     all_preds = []
     all_targets = []
@@ -630,7 +658,7 @@ def main() -> None:
             out = model(batch.x, batch.edge_index, batch.batch)
             all_preds.extend(out.cpu().numpy().flatten())
             all_targets.extend(batch.y.cpu().numpy().flatten())
-    
+
     plot_roc_pr_curves(np.array(all_targets), np.array(all_preds), optimal_threshold)
 
 
