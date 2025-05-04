@@ -46,6 +46,7 @@ NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2/processed"
 BATCH_SIZE = 32
 NUM_EPOCHS = 50
 LEARNING_RATE = 0.001
+SAMPLE_PERCENTAGE = 100
 
 
 class ViolenceDetectionGNN(nn.Module):
@@ -458,7 +459,6 @@ def main() -> None:
         )
         return
 
-    sample_percentage = 100
     all_graphs = []
     all_labels = []
 
@@ -466,7 +466,7 @@ def main() -> None:
     print("Loading and preprocessing data from cam1...")
     try:
         graphs_cam1, labels_cam1 = load_mmpose_data(
-            VIOLENT_PATH_CAM1, NON_VIOLENT_PATH_CAM1, sample_percentage
+            VIOLENT_PATH_CAM1, NON_VIOLENT_PATH_CAM1, SAMPLE_PERCENTAGE
         )
         all_graphs.extend(graphs_cam1)
         all_labels.extend(labels_cam1)
@@ -481,7 +481,7 @@ def main() -> None:
         print("Loading and preprocessing data from cam2...")
         try:
             graphs_cam2, labels_cam2 = load_mmpose_data(
-                VIOLENT_PATH_CAM2, NON_VIOLENT_PATH_CAM2, sample_percentage
+                VIOLENT_PATH_CAM2, NON_VIOLENT_PATH_CAM2, SAMPLE_PERCENTAGE
             )
             all_graphs.extend(graphs_cam2)
             all_labels.extend(labels_cam2)
