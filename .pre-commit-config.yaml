@@ -24,10 +24,13 @@ repos:
         exclude: ^mmpose/
 
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.262
+    rev: v0.1.9
     hooks:
     -   id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [
+            "--fix",
+            "--exit-non-zero-on-fix",
+        ]
         exclude: ^mmpose/
 
 -   repo: https://github.com/pycqa/isort
