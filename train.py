@@ -37,8 +37,10 @@ from transformer import TransformerEncoder
 # Configuration constants
 # Use Path objects for better path handling
 DATA_PATH = Path("/Volumes/MARCREYES/violence-detection-dataset")
-VIOLENT_PATH = DATA_PATH / "violent/cam1/processed"
-NON_VIOLENT_PATH = DATA_PATH / "non-violent/cam1/processed"
+VIOLENT_PATH_CAM1 = DATA_PATH / "violent/cam1/processed"
+NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1/processed"
+VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2/processed"
+NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2/processed"
 
 # Training hyperparameters
 BATCH_SIZE = 32
@@ -442,38 +444,66 @@ def main() -> None:
     device = get_device()
     print(f"Using device: {device}")
 
-    if not VIOLENT_PATH.exists():
-        print(f"Error: Violent data path does not exist: {VIOLENT_PATH}")
+    # Check if directories exist
+    if not VIOLENT_PATH_CAM1.exists():
+        print(
+            f"Error: Violent data path (cam1) does not exist: " f"{VIOLENT_PATH_CAM1}"
+        )
         return
 
-    if not NON_VIOLENT_PATH.exists():
-        print(f"Error: Non-violent data path does not exist: {NON_VIOLENT_PATH}")
+    if not NON_VIOLENT_PATH_CAM1.exists():
+        print(
+            f"Error: Non-violent data path (cam1) does not exist: "
+            f"{NON_VIOLENT_PATH_CAM1}"
+        )
         return
 
     sample_percentage = 100
+    all_graphs = []
+    all_labels = []
 
-    print("Loading and preprocessing data...")
+    # Load data from cam1
+    print("Loading and preprocessing data from cam1...")
     try:
-        graphs, labels = load_mmpose_data(
-            VIOLENT_PATH, NON_VIOLENT_PATH, sample_percentage
+        graphs_cam1, labels_cam1 = load_mmpose_data(
+            VIOLENT_PATH_CAM1, NON_VIOLENT_PATH_CAM1, sample_percentage
         )
+        all_graphs.extend(graphs_cam1)
+        all_labels.extend(labels_cam1)
+        print(f"Loaded {len(graphs_cam1)} graphs from cam1")
     except ValueError as e:
-        print(f"Error loading data: {e}")
-        return
+        print(f"Error loading data from cam1: {e}")
 
-    if not graphs:
+    # Check if cam2 data exists and load it
+    cam2_exists = VIOLENT_PATH_CAM2.exists() and NON_VIOLENT_PATH_CAM2.exists()
+
+    if cam2_exists:
+        print("Loading and preprocessing data from cam2...")
+        try:
+            graphs_cam2, labels_cam2 = load_mmpose_data(
+                VIOLENT_PATH_CAM2, NON_VIOLENT_PATH_CAM2, sample_percentage
+            )
+            all_graphs.extend(graphs_cam2)
+            all_labels.extend(labels_cam2)
+            print(f"Loaded {len(graphs_cam2)} graphs from cam2")
+        except ValueError as e:
+            print(f"Error loading data from cam2: {e}")
+    else:
+        print("Cam2 data not found. Using only cam1 data for training.")
+
+    if not all_graphs:
         print("No valid graphs were created. Check your data.")
         return
 
-    print(f"Total graphs: {len(graphs)}")
-    print(f"Positive (violent) samples: {sum(labels)}")
-    print(f"Negative (non-violent) samples: {len(labels) - sum(labels)}")
+    print(f"Total graphs: {len(all_graphs)}")
+    print(f"Positive (violent) samples: {sum(all_labels)}")
+    print(f"Negative (non-violent) samples: {len(all_labels) - sum(all_labels)}")
 
-    for i, graph in enumerate(graphs):
-        graph.y = torch.tensor([labels[i]], dtype=torch.float)
+    for i, graph in enumerate(all_graphs):
+        graph.y = torch.tensor([all_labels[i]], dtype=torch.float)
 
     train_graphs, test_graphs = train_test_split(
-        graphs, test_size=0.2, random_state=42, stratify=labels
+        all_graphs, test_size=0.2, random_state=42, stratify=all_labels
     )
     train_graphs, val_graphs = train_test_split(
         train_graphs, test_size=0.25, random_state=42
