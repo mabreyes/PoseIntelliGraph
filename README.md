@@ -175,17 +175,20 @@ This project detects violent behavior in videos by analyzing human pose data usi
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/violence-detection.git
    cd violence-detection
    ```
 
 2. Install the required packages:
+
    ```bash
    pip install -r requirements.txt
    ```
 
 3. Verify your setup:
+
    ```bash
    make help
    ```
@@ -262,17 +265,20 @@ The project includes a Makefile that simplifies the entire workflow.
 ### Examples
 
 **Quick Training and Testing:**
+
 ```bash
 make quick-train
 make test
 ```
 
 **Training with Custom Parameters:**
+
 ```bash
 make train NUM_EPOCHS=100 BATCH_SIZE=16
 ```
 
 **Batch Inference:**
+
 ```bash
 make process-all-json INPUT_DIR=/path/to/json/files OUTPUT_DIR=./results
 ```
@@ -341,6 +347,7 @@ make train NUM_EPOCHS=100 BATCH_SIZE=16
 #### Training Process
 
 The training script:
+
 1. Loads MMPose JSON files from violent and non-violent datasets
 2. Converts pose data to graph representations
 3. Trains a GNN model on the data
@@ -413,11 +420,13 @@ The violence detection model uses a multi-component architecture:
    - Produces final violence score on a scale from 0 to 1
 
 This pipeline architecture (pose keypoints → GNN → Transformer → classification) allows the model to:
+
 - Analyze the spatial relationships between body parts via the GNN
 - Capture temporal and contextual patterns via the Transformer
 - Make more robust predictions by combining multiple deep learning techniques
 
 The code is modularly organized into separate files:
+
 - `gnn.py`: Contains the GNN component
 - `transformer.py`: Contains the Transformer component
 - `violence_detection_model.py`: Main file that combines all components
@@ -431,6 +440,7 @@ On our test dataset, the model achieves:
 - Real-time inference capability
 
 The model's performance is evaluated using:
+
 - Binary cross-entropy loss
 - ROC AUC score for classification performance
 - Training and validation curves to monitor learning progress
