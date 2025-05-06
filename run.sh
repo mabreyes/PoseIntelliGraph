@@ -59,12 +59,12 @@ fi
 # Run the appropriate mode
 if [[ "$MODE" == "train" ]]; then
     echo "Running in training mode..."
-    python train.py
+    python -W ignore train.py
 elif [[ "$MODE" == "infer" ]]; then
     echo "Running in inference mode..."
     echo "Input file: $INPUT_FILE"
     echo "Output file: $OUTPUT_FILE"
-    python inference.py --input_file "$INPUT_FILE" --output_file "$OUTPUT_FILE"
+    python -W ignore inference.py --input_file "$INPUT_FILE" --output_file "$OUTPUT_FILE"
 fi
 
 echo "Model execution completed"

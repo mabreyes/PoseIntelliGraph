@@ -213,7 +213,7 @@ for EXT in "${VIDEO_EXTENSIONS[@]}"; do
       fi
 
       # Run pose estimation command for this video
-      python mmpose/demo/topdown_demo_with_mmdet.py \
+      python -W ignore mmpose/demo/topdown_demo_with_mmdet.py \
         "$CONFIG_DET" \
         "$CHECKPOINT_DET" \
         "$CONFIG_POSE" \
