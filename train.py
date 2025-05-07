@@ -36,11 +36,20 @@ from transformer import TransformerEncoder
 
 # Configuration constants
 # Use Path objects for better path handling
-DATA_PATH = Path("/Volumes/MARCREYES/violence-detection-dataset")
-VIOLENT_PATH_CAM1 = DATA_PATH / "violent/cam1/processed"
-NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1/processed"
-VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2/processed"
-NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2/processed"
+if torch.cuda.is_available():
+    # GPU detected paths
+    DATA_PATH = Path("./json")
+    VIOLENT_PATH_CAM1 = DATA_PATH / "violent/cam1"
+    NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1"
+    VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2"
+    NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2"
+else:
+    # Local paths (no GPU)
+    DATA_PATH = Path("/Volumes/MARCREYES/violence-detection-dataset")
+    VIOLENT_PATH_CAM1 = DATA_PATH / "violent/cam1/processed"
+    NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1/processed"
+    VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2/processed"
+    NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2/processed"
 
 # Training hyperparameters
 BATCH_SIZE = 32
