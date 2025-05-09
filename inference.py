@@ -18,7 +18,7 @@ from torch_geometric.data import Data
 
 # Import from separate component files
 from gnn import create_pose_graph
-from violence_detection_model import ViolenceDetectionGNN, get_device
+from train import ViolenceDetectionGNN, get_device
 
 
 def load_and_process_json(json_file: Path) -> List[Tuple[int, List[Data]]]:
@@ -115,7 +115,7 @@ def parse_arguments() -> argparse.Namespace:
         "--threshold",
         type=float,
         default=None,
-        help="Violence classification threshold (0.0-1.0). If not provided, uses threshold from model file",
+        help="Classification threshold (0-1). Uses model's threshold if None.",
     )
     parser.add_argument(
         "--show_metrics",

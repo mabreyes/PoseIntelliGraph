@@ -89,5 +89,27 @@ videos_samp/
 *.pt
 *.png
 
-# Ignore mmpose directory (it has its own .gitignore)
-mmpose/
+# MMPose specific ignores
+mmpose/**/*.pyc
+mmpose/**/.DS_Store
+mmpose/.mim
+mmpose/mmpose/.mim
+mmpose/work_dirs/
+mmpose/viz_results/
+mmpose/docs/en/_build
+mmpose/docs/zh_cn/_build
+
+# Data files to ignore in mmpose
+mmpose/**/*.pkl
+mmpose/**/*.pkl.json
+mmpose/**/*.log.json
+mmpose/**/*.npy
+mmpose/**/*.pth
+
+# But don't ignore test data files
+!mmpose/tests/data/**/*.pkl
+!mmpose/tests/data/**/*.pkl.json
+!mmpose/tests/data/**/*.log.json
+!mmpose/tests/data/**/*.pth
+!mmpose/tests/data/**/*.npy
+!mmpose/tests/data/**/vis/

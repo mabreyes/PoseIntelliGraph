@@ -10,8 +10,9 @@ MODEL_FILE = violence_detection_model.pt
 METRICS_FILE = training_metrics.png
 BATCH_SIZE = 32
 NUM_EPOCHS = 50
-TRAIN_SCRIPT = violence_detection_model.py
+TRAIN_SCRIPT = train.py
 INFERENCE_SCRIPT = inference.py
+RUN_SCRIPT = ./run.sh
 
 # Default target
 all: process train test
@@ -49,7 +50,7 @@ update-params:
 # Train the model
 train: update-params
 	@echo "Training the violence detection model..."
-	python $(TRAIN_SCRIPT)
+	$(RUN_SCRIPT) --train
 
 # Quick training (1 epoch) for testing
 quick-train:
@@ -63,7 +64,7 @@ inference:
 		exit 1; \
 	fi
 	@echo "Running inference on $(INPUT_FILE)..."
-	python $(INFERENCE_SCRIPT) --input_file $(INPUT_FILE) --output_file $(or $(OUTPUT_FILE),inference_results.json)
+	$(RUN_SCRIPT) --infer --input $(INPUT_FILE) --output $(or $(OUTPUT_FILE),inference_results.json)
 
 # Test on a sample violent file
 test-violent:
@@ -74,7 +75,7 @@ test-violent:
 		exit 1; \
 	fi
 	@echo "Using sample file: $(SAMPLE_FILE)"
-	python $(INFERENCE_SCRIPT) --input_file $(SAMPLE_FILE) --output_file violent_test_results.json
+	$(RUN_SCRIPT) --infer --input $(SAMPLE_FILE) --output violent_test_results.json
 
 # Test on a sample non-violent file
 test-nonviolent:
@@ -85,7 +86,7 @@ test-nonviolent:
 		exit 1; \
 	fi
 	@echo "Using sample file: $(SAMPLE_FILE)"
-	python $(INFERENCE_SCRIPT) --input_file $(SAMPLE_FILE) --output_file nonviolent_test_results.json
+	$(RUN_SCRIPT) --infer --input $(SAMPLE_FILE) --output nonviolent_test_results.json
 
 # Run tests on both violent and non-violent samples
 test: test-violent test-nonviolent
@@ -104,7 +105,7 @@ process-all-json:
 	@mkdir -p $(OUTPUT_DIR)
 	@for file in $(INPUT_DIR)/*.json; do \
 		echo "Processing $$file..."; \
-		python $(INFERENCE_SCRIPT) --input_file $$file --output_file $(OUTPUT_DIR)/$$(basename $$file .json)_results.json; \
+		$(RUN_SCRIPT) --infer --input $$file --output $(OUTPUT_DIR)/$$(basename $$file .json)_results.json; \
 	done
 
 # Clean up generated files

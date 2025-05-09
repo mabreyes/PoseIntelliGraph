@@ -1,0 +1,45 @@
+---
+config:
+  theme: neutral
+---
+gantt
+    title Violence Detection Model Research Project Timeline
+    dateFormat  YYYY-MM-DD
+    axisFormat %b '%y
+    section 0. Data Collection & Planning
+    Literature Review                       :a1, 2025-04-01, 14d
+    Dataset Selection & Strategy            :a2, after a1, 7d
+    Data Collection & Annotation            :a3, after a2, 14d
+    section 1. Model Development (April-August)
+    Keypoint Extraction                     :d1, 2025-04-21, 10d
+    Graph Construction                      :d2, after d1, 10d
+    GCN Layer Implementation                :g1, 2025-05-10, 14d
+    GAT Layer Implementation                :g3, after g1, 14d
+    GIN Layer Implementation                :g5, 2025-06-07, 14d
+    Multi-level Feature Integration         :g7, after g5, 10d
+    Multi-scale Pooling                     :g9, after g7, 10d
+    Transformer Implementation              :t1, 2025-07-10, 14d
+    Classification Head                     :c1, after t1, 7d
+    Model Integration & Training            :c6, after c1, 7d
+    Performance Evaluation                  :c7, 2025-08-15, 14d
+    Final Model Completion                  :milestone, 2025-08-31, 0d
+    section 2. Paper Writing (Overlapping)
+    Related Work & Background               :p1, 2025-06-01, 30d
+    Data & Methodology                      :p2, 2025-06-15, 21d
+    Architecture Documentation              :p3, 2025-07-01, 45d
+    Initial Results Documentation           :p4, 2025-08-15, 30d
+    Results Analysis & Discussion           :p5, 2025-09-15, 30d
+    Abstract & Introduction                 :p6, 2025-10-15, 14d
+    Full Draft Preparation                  :p7, 2025-11-01, 21d
+    Paper Review & Revisions                :p9, after p7, 21d
+    Final Manuscript Preparation            :p10, after p9, 14d
+    Paper Submission                        :milestone, 2025-12-22, 0d
+    section 3. Extended Evaluation & Refinement
+    Extended Experiments                    :e1, 2025-09-01, 30d
+    Comparative Analysis                    :e2, after e1, 21d
+    Model Refinements                       :e3, after e2, 30d
+    Final Performance Benchmarks            :e4, after e3, 14d
+    section 4. Collaboration & Dissemination
+    Research Presentation (with Adviser)            :coll1, 2025-05-01, 210d
+    Collaborator Meetings (with Adviser)                   :coll2, 2025-05-15, 200d
+    Pre-submission Review                   :coll3, 2025-12-01, 14d
