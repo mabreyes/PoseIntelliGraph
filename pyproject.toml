@@ -59,6 +59,31 @@ disallow_incomplete_defs = true
 [tool.ruff]
 line-length = 88
 target-version = "py38"
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "mmpose",
+]
+
+[tool.ruff.lint]
 select = ["E", "F", "B", "W", "I"]
 ignore = []
 
