@@ -14,7 +14,6 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import (
     confusion_matrix,
@@ -31,8 +30,8 @@ from tqdm import tqdm
 import visualization as viz
 
 # Import components from separate files
-from gnn import PoseGNN, create_pose_graph
-from transformer import TransformerEncoder
+from gnn import create_pose_graph
+from model import ViolenceDetectionGNN, get_device
 
 # Configuration constants
 # Use Path objects for better path handling
@@ -55,81 +54,72 @@ else:
 BATCH_SIZE = 32
 NUM_EPOCHS = 50
 LEARNING_RATE = 0.001
-SAMPLE_PERCENTAGE = 100
+SAMPLE_PERCENTAGE = 1
 
 
-class ViolenceDetectionGNN(nn.Module):
+def find_optimal_threshold(
+    y_true: np.ndarray, y_score: np.ndarray
+) -> Tuple[float, Dict[str, float]]:
     """
-    Full model architecture for violence detection from pose data.
+    Calculate the optimal classification threshold using multiple methods.
 
-    This model processes pose keypoints using a pipeline of:
-    1. Graph Neural Network to process pose graph structure
-    2. Transformer to capture contextual patterns
-    3. Classifier to produce violence score
+    Args:
+        y_true: Ground truth binary labels
+        y_score: Predicted scores (probabilities)
+
+    Returns:
+        Tuple of (optimal threshold, dictionary of metrics at that threshold)
     """
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
 
-    def __init__(
-        self,
-        in_channels: int,
-        hidden_channels: int = 64,
-        transformer_heads: int = 4,
-        transformer_layers: int = 2,
-    ):
-        """
-        Initialize the full model.
+    # Calculate Youden's J statistic (J = Sensitivity + Specificity - 1)
+    j_scores = tpr - fpr
+    optimal_idx_j = np.argmax(j_scores)
+    optimal_threshold_j = thresholds[optimal_idx_j]
 
-        Args:
-            in_channels: Number of input features per node
-                         (typically 2 for x,y coordinates)
-            hidden_channels: Size of hidden representations
-            transformer_heads: Number of attention heads in transformer
-            transformer_layers: Number of transformer layers
-        """
-        super(ViolenceDetectionGNN, self).__init__()
+    # Calculate distance to (0,1) point in ROC space
+    distances = np.sqrt((1 - tpr) ** 2 + fpr**2)
+    optimal_idx_d = np.argmin(distances)
+    optimal_threshold_d = thresholds[optimal_idx_d]
 
-        # GNN component
-        self.gnn = PoseGNN(in_channels, hidden_channels)
+    # Calculate F1 score at different thresholds
+    precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
 
-        # Transformer component
-        self.transformer = TransformerEncoder(
-            input_dim=hidden_channels,
-            num_heads=transformer_heads,
-            num_layers=transformer_layers,
-            output_dim=hidden_channels,
-        )
+    # Calculate F1 for all possible thresholds
+    f1_scores = []
+    for t in thresholds:
+        y_pred = (y_score >= t).astype(int)
+        f1 = f1_score(y_true, y_pred)
+        f1_scores.append(f1)
 
-        # Final prediction layers
-        self.lin1 = nn.Linear(hidden_channels, hidden_channels // 2)
-        self.lin2 = nn.Linear(hidden_channels // 2, 1)
+    optimal_idx_f1 = np.argmax(f1_scores)
+    optimal_threshold_f1 = thresholds[optimal_idx_f1]
 
-    def forward(
-        self, x: torch.Tensor, edge_index: torch.Tensor, batch: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Forward pass through the full model.
+    # Choose Youden's J as the primary method (most common in academic literature)
+    optimal_threshold = optimal_threshold_j
 
-        Args:
-            x: Node features [num_nodes, in_channels]
-            edge_index: Graph connectivity [2, num_edges]
-            batch: Batch assignment for nodes [num_nodes]
+    # Calculate confusion matrix at optimal threshold
+    y_pred = (y_score >= optimal_threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
 
-        Returns:
-            Violence score between 0 and 1 [batch_size, 1]
-        """
-        # Process through GNN to get graph embeddings
-        x = self.gnn(x, edge_index, batch)
+    # Calculate various metrics at the optimal threshold
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+    precision_val = tp / (tp + fp) if (tp + fp) > 0 else 0
 
-        # Process through transformer to capture contextual patterns
-        x = self.transformer(x)
+    # Create metrics dictionary
+    metrics = {
+        "threshold_j": optimal_threshold_j,
+        "threshold_distance": optimal_threshold_d,
+        "threshold_f1": optimal_threshold_f1,
+        "sensitivity": sensitivity,
+        "specificity": specificity,
+        "precision": precision_val,
+        "f1_score": f1_scores[optimal_idx_j],
+        "youdens_j": j_scores[optimal_idx_j],
+    }
 
-        # Final predictions
-        x = self.lin1(x)
-        x = F.relu(x)
-        x = F.dropout(x, p=0.3, training=self.training)
-        x = self.lin2(x)
-
-        # Output violence score between 0 and 1
-        return torch.sigmoid(x)
+    return optimal_threshold, metrics
 
 
 def load_mmpose_data(
@@ -321,86 +311,6 @@ def train_model(
         print(f"  Val AUC: {val_auc:.4f}")
 
     return metrics
-
-
-def get_device() -> torch.device:
-    """
-    Determine the optimal device for training/inference.
-
-    Returns:
-        torch.device: CUDA if available, MPS if on Apple Silicon, otherwise CPU
-    """
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return torch.device("mps")
-    else:
-        return torch.device("cpu")
-
-
-def find_optimal_threshold(
-    y_true: np.ndarray, y_score: np.ndarray
-) -> Tuple[float, Dict[str, float]]:
-    """
-    Calculate the optimal classification threshold using multiple methods.
-
-    Args:
-        y_true: Ground truth binary labels
-        y_score: Predicted scores (probabilities)
-
-    Returns:
-        Tuple of (optimal threshold, dictionary of metrics at that threshold)
-    """
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
-
-    # Calculate Youden's J statistic (J = Sensitivity + Specificity - 1)
-    j_scores = tpr - fpr
-    optimal_idx_j = np.argmax(j_scores)
-    optimal_threshold_j = thresholds[optimal_idx_j]
-
-    # Calculate distance to (0,1) point in ROC space
-    distances = np.sqrt((1 - tpr) ** 2 + fpr**2)
-    optimal_idx_d = np.argmin(distances)
-    optimal_threshold_d = thresholds[optimal_idx_d]
-
-    # Calculate F1 score at different thresholds
-    precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-
-    # Calculate F1 for all possible thresholds
-    f1_scores = []
-    for t in thresholds:
-        y_pred = (y_score >= t).astype(int)
-        f1 = f1_score(y_true, y_pred)
-        f1_scores.append(f1)
-
-    optimal_idx_f1 = np.argmax(f1_scores)
-    optimal_threshold_f1 = thresholds[optimal_idx_f1]
-
-    # Choose Youden's J as the primary method (most common in academic literature)
-    optimal_threshold = optimal_threshold_j
-
-    # Calculate confusion matrix at optimal threshold
-    y_pred = (y_score >= optimal_threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-
-    # Calculate various metrics at the optimal threshold
-    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
-    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
-    precision_val = tp / (tp + fp) if (tp + fp) > 0 else 0
-
-    # Create metrics dictionary
-    metrics = {
-        "threshold_j": optimal_threshold_j,
-        "threshold_distance": optimal_threshold_d,
-        "threshold_f1": optimal_threshold_f1,
-        "sensitivity": sensitivity,
-        "specificity": specificity,
-        "precision": precision_val,
-        "f1_score": f1_scores[optimal_idx_j],
-        "youdens_j": j_scores[optimal_idx_j],
-    }
-
-    return optimal_threshold, metrics
 
 
 def evaluate_model(

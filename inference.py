@@ -18,7 +18,30 @@ from torch_geometric.data import Data
 
 # Import from separate component files
 from gnn import create_pose_graph
-from train import ViolenceDetectionGNN, get_device
+from model import ViolenceDetectionGNN, get_device
+
+
+def interpret_score(score: float, threshold: float) -> Tuple[str, bool]:
+    """
+    Interpret a violence score based on the threshold.
+
+    Args:
+        score: Violence score between 0 and 1
+        threshold: Classification threshold
+
+    Returns:
+        Tuple of (interpretation string, is_violent boolean)
+    """
+    is_violent = score >= threshold
+
+    if score < threshold - 0.2:
+        return "Likely non-violent", is_violent
+    elif score < threshold:
+        return "Possibly non-violent", is_violent
+    elif score < threshold + 0.2:
+        return "Possibly violent", is_violent
+    else:
+        return "Likely violent", is_violent
 
 
 def load_and_process_json(json_file: Path) -> List[Tuple[int, List[Data]]]:
@@ -158,29 +181,6 @@ def load_model_and_threshold(
         metrics = None
 
     return model, threshold, metrics
-
-
-def interpret_score(score: float, threshold: float) -> Tuple[str, bool]:
-    """
-    Interpret a violence score based on the threshold.
-
-    Args:
-        score: Violence score between 0 and 1
-        threshold: Classification threshold
-
-    Returns:
-        Tuple of (interpretation string, is_violent boolean)
-    """
-    is_violent = score >= threshold
-
-    if score < threshold - 0.2:
-        return "Likely non-violent", is_violent
-    elif score < threshold:
-        return "Possibly non-violent", is_violent
-    elif score < threshold + 0.2:
-        return "Possibly violent", is_violent
-    else:
-        return "Likely violent", is_violent
 
 
 def main() -> None:
