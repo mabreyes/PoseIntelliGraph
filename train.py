@@ -3,8 +3,12 @@
 Violence Detection using Graph Neural Networks.
 
 This module implements a GNN model to detect violent behavior from human pose data
-in MMPose JSON format. It includes functionality for graph construction, model
-training, and evaluation.
+in MMPose JSON format. It includes functionality for:
+- Data loading and preprocessing from MMPose JSON format
+- Graph construction from pose keypoints
+- Model training with metrics tracking
+- Model evaluation and optimal threshold selection
+- Result visualization and model persistence
 """
 from __future__ import annotations
 
@@ -34,7 +38,7 @@ from gnn import create_pose_graph
 from model import ViolenceDetectionGNN, get_device
 
 # Configuration constants
-# Use Path objects for better path handling
+# Data paths
 if torch.cuda.is_available():
     # GPU detected paths
     DATA_PATH = Path("./json")
@@ -52,9 +56,17 @@ else:
 
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 50
+NUM_EPOCHS = 2
 LEARNING_RATE = 0.001
-SAMPLE_PERCENTAGE = 1
+SAMPLE_PERCENTAGE = 1  # Percentage of data to use (1-100)
+
+# Model and evaluation constants
+MODEL_HIDDEN_CHANNELS = 64
+MODEL_TRANSFORMER_HEADS = 4
+MODEL_TRANSFORMER_LAYERS = 2
+TEST_SPLIT_RATIO = 0.2
+VALIDATION_SPLIT_RATIO = 0.25
+RANDOM_SEED = 42
 
 
 def find_optimal_threshold(
@@ -62,6 +74,14 @@ def find_optimal_threshold(
 ) -> Tuple[float, Dict[str, float]]:
     """
     Calculate the optimal classification threshold using multiple methods.
+
+    Implements several threshold optimization techniques:
+    1. Youden's J statistic (maximizing sensitivity + specificity - 1)
+    2. Minimum distance to perfect classifier (0,1) point in ROC space
+    3. Maximum F1 score
+
+    The primary method used is Youden's J statistic, which is widely accepted
+    in the academic literature for binary classification threshold optimization.
 
     Args:
         y_true: Ground truth binary labels
@@ -127,6 +147,11 @@ def load_mmpose_data(
 ) -> Tuple[List[Data], List[float]]:
     """
     Load MMPose JSON files and convert them to graph data.
+
+    Processes JSON files containing pose keypoints from both violent and non-violent
+    video frames. Each person instance in a frame is converted to a graph representation
+    suitable for GNN processing. The function supports processing a subset of the data
+    using the sample_percentage parameter.
 
     Args:
         violent_path: Path to violent pose JSON files
@@ -229,6 +254,10 @@ def train_model(
     """
     Train the GNN model and track metrics.
 
+    Implements a training loop with both training and validation phases.
+    For each epoch, the model is trained on the training set and evaluated
+    on the validation set. Metrics including loss and AUC are tracked.
+
     Args:
         model: The GNN model
         train_loader: Training data loader
@@ -319,6 +348,9 @@ def evaluate_model(
     """
     Evaluate the model on the test set.
 
+    Performs a comprehensive evaluation of the trained model on the test set,
+    calculating loss, AUC, and finding the optimal classification threshold.
+
     Args:
         model: The trained GNN model
         test_loader: Test data loader
@@ -360,7 +392,17 @@ def evaluate_model(
 
 
 def main() -> None:
-    """Main function to train and evaluate the violence detection model."""
+    """
+    Main function to train and evaluate the violence detection model.
+
+    This function orchestrates the entire training pipeline:
+    1. Sets up the device and data paths
+    2. Loads and preprocesses data
+    3. Splits data into training, validation, and test sets
+    4. Trains the model
+    5. Evaluates the model and finds optimal classification threshold
+    6. Saves the model and generates visualizations
+    """
     device = get_device()
     print(f"Using device: {device}")
 
@@ -418,40 +460,51 @@ def main() -> None:
     print(f"Positive (violent) samples: {sum(all_labels)}")
     print(f"Negative (non-violent) samples: {len(all_labels) - sum(all_labels)}")
 
+    # Assign labels to graphs
     for i, graph in enumerate(all_graphs):
         graph.y = torch.tensor([all_labels[i]], dtype=torch.float)
 
+    # Split data into train, validation, and test sets
     train_graphs, test_graphs = train_test_split(
-        all_graphs, test_size=0.2, random_state=42, stratify=all_labels
+        all_graphs,
+        test_size=TEST_SPLIT_RATIO,
+        random_state=RANDOM_SEED,
+        stratify=all_labels,
     )
     train_graphs, val_graphs = train_test_split(
-        train_graphs, test_size=0.25, random_state=42
+        train_graphs, test_size=VALIDATION_SPLIT_RATIO, random_state=RANDOM_SEED
     )
 
     print(f"Training graphs: {len(train_graphs)}")
     print(f"Validation graphs: {len(val_graphs)}")
     print(f"Test graphs: {len(test_graphs)}")
 
+    # Create data loaders
     train_loader = DataLoader(train_graphs, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_graphs, batch_size=BATCH_SIZE)
     test_loader = DataLoader(test_graphs, batch_size=BATCH_SIZE)
 
+    # Get input channel dimension from data
     in_channels = train_graphs[0].x.shape[1]
 
+    # Initialize model
     model = ViolenceDetectionGNN(
         in_channels=in_channels,
-        hidden_channels=64,
-        transformer_heads=4,
-        transformer_layers=2,
+        hidden_channels=MODEL_HIDDEN_CHANNELS,
+        transformer_heads=MODEL_TRANSFORMER_HEADS,
+        transformer_layers=MODEL_TRANSFORMER_LAYERS,
     ).to(device)
 
+    # Initialize optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
+    # Train model
     print("Training model...")
     metrics = train_model(
         model, train_loader, val_loader, device, optimizer, num_epochs=NUM_EPOCHS
     )
 
+    # Evaluate model
     avg_test_loss, test_auc, optimal_threshold, threshold_metrics = evaluate_model(
         model, test_loader, device
     )
@@ -462,6 +515,7 @@ def main() -> None:
     for metric, value in threshold_metrics.items():
         print(f"  {metric}: {value:.4f}")
 
+    # Save model
     model_path = Path("violence_detection_model.pt")
     torch.save(
         {
