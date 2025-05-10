@@ -56,15 +56,18 @@ if [[ "$MODE" == "infer" && -z "$INPUT_FILE" ]]; then
     usage
 fi
 
+# Update PYTHONPATH to include src directory
+export PYTHONPATH="$PYTHONPATH:$(pwd)"
+
 # Run the appropriate mode
 if [[ "$MODE" == "train" ]]; then
     echo "Running in training mode..."
-    python -W ignore train.py
+    python -W ignore src/train.py
 elif [[ "$MODE" == "infer" ]]; then
     echo "Running in inference mode..."
     echo "Input file: $INPUT_FILE"
     echo "Output file: $OUTPUT_FILE"
-    python -W ignore inference.py --input_file "$INPUT_FILE" --output_file "$OUTPUT_FILE"
+    python -W ignore src/inference.py --input_file "$INPUT_FILE" --output_file "$OUTPUT_FILE"
 fi
 
 echo "Model execution completed"

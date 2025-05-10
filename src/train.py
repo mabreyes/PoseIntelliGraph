@@ -10,6 +10,7 @@ in MMPose JSON format. It includes functionality for:
 - Model evaluation and optimal threshold selection
 - Result visualization and model persistence
 """
+
 from __future__ import annotations
 
 import json
@@ -280,7 +281,7 @@ def train_model(
 
         # Process batches
         for batch in tqdm(
-            train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training"
+            train_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Training"
         ):
             batch = batch.to(device)
             optimizer.zero_grad()
@@ -310,7 +311,7 @@ def train_model(
 
         with torch.no_grad():
             for batch in tqdm(
-                val_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Validation"
+                val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Validation"
             ):
                 batch = batch.to(device)
 
@@ -334,7 +335,7 @@ def train_model(
         metrics["val_auc"].append(val_auc)
 
         # Print epoch results
-        print(f"Epoch {epoch+1}/{num_epochs}:")
+        print(f"Epoch {epoch + 1}/{num_epochs}:")
         print(f"  Train Loss: {avg_train_loss:.4f}")
         print(f"  Val Loss: {avg_val_loss:.4f}")
         print(f"  Val AUC: {val_auc:.4f}")
@@ -408,9 +409,7 @@ def main() -> None:
 
     # Check if directories exist
     if not VIOLENT_PATH_CAM1.exists():
-        print(
-            f"Error: Violent data path (cam1) does not exist: " f"{VIOLENT_PATH_CAM1}"
-        )
+        print(f"Error: Violent data path (cam1) does not exist: {VIOLENT_PATH_CAM1}")
         return
 
     if not NON_VIOLENT_PATH_CAM1.exists():

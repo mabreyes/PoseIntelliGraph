@@ -247,10 +247,8 @@ def main() -> None:
     print(f"Model loaded from {model_path}")
 
     threshold = args.threshold if args.threshold is not None else model_threshold
-    print(
-        f"Using classification threshold: {threshold}"
-        + (" (from model)" if args.threshold is None else " (user-specified)")
-    )
+    source_text = " (from model)" if args.threshold is None else " (user-specified)"
+    print(f"Using classification threshold: {threshold}{source_text}")
 
     if args.show_metrics and metrics:
         print("\nModel threshold metrics:")
@@ -295,6 +293,9 @@ def main() -> None:
         (violent_frame_count / total_frames) * 100 if total_frames else 0
     )
 
+    violent_stat = f"{violent_frame_count}/{total_frames} ({violent_percentage:.2f}%)"
+    print(f"Violent frames: {violent_stat}")
+
     output_data = {
         "file_name": str(input_file.name),
         "results": results,
@@ -311,9 +312,6 @@ def main() -> None:
     print(f"Results saved to {output_file}")
     print(f"Overall violence score: {overall_score}")
     print(f"Interpretation: {overall_interpretation}")
-    print(
-        f"Violent frames: {violent_frame_count}/{total_frames} ({violent_percentage:.2f}%)"
-    )
 
 
 if __name__ == "__main__":

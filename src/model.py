@@ -2,8 +2,9 @@
 """
 Violence Detection Model Architecture.
 
-This module defines the main model architecture for violence detection from human pose data,
-combining a Graph Neural Network and Transformer components. It includes:
+This module defines the main model architecture for violence detection from human pose
+data, combining a Graph Neural Network and Transformer components.
+It includes:
 - Device detection for optimal hardware utilization
 - ViolenceDetectionGNN model that combines GNN and Transformer processing
 """

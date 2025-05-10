@@ -151,6 +151,7 @@ This project detects violent behavior in videos by analyzing human pose data usi
 
 - [Features](#features)
 - [Installation](#installation)
+- [Project Structure](#project-structure)
 - [Dataset Structure](#dataset-structure)
 - [Workflow Overview](#workflow-overview)
 - [Using the Makefile](#using-the-makefile)
@@ -192,6 +193,26 @@ This project detects violent behavior in videos by analyzing human pose data usi
    ```bash
    make help
    ```
+
+## Project Structure
+
+The project is organized as follows:
+
+```
+violence-detection/
+├── src/                  # Source code directory
+│   ├── gnn.py            # GNN component and graph creation utilities
+│   ├── model.py          # Main model architecture
+│   ├── transformer.py    # Transformer component for sequential processing
+│   ├── train.py          # Training script
+│   ├── inference.py      # Inference script
+│   └── visualization.py  # Visualization utilities
+├── docs/                 # Documentation
+├── Makefile              # Build automation
+├── run.sh                # Execution script
+├── requirements.txt      # Project dependencies
+└── README.md             # Project documentation
+```
 
 ## Dataset Structure
 
