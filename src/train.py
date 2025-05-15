@@ -48,6 +48,13 @@ if torch.cuda.is_available():
     NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1"
     VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2"
     NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2"
+
+    # Real Life Violence Dataset paths
+    REAL_LIFE_VIOLENCE_PATH = Path("Real_Life_Violence_Dataset/Violence/processed")
+    REAL_LIFE_NONVIOLENCE_PATH = Path(
+        "Real_Life_Violence_Dataset/NonViolence/processed"
+    )
+
 else:
     # Local paths (no GPU)
     DATA_PATH = Path("/Volumes/MARCREYES/violence-detection-dataset")
