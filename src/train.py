@@ -73,9 +73,9 @@ else:
 
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 50
+NUM_EPOCHS = 1
 LEARNING_RATE = 0.001
-SAMPLE_PERCENTAGE = 100  # Percentage of data to use (1-100)
+SAMPLE_PERCENTAGE = 1  # Percentage of data to use (1-100)
 
 # Model and evaluation constants
 MODEL_HIDDEN_CHANNELS = 64

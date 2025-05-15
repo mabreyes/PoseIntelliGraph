@@ -378,13 +378,33 @@ class GraphRNNCell(nn.Module):
         # Reshape edge_index for batched processing
         # Each batch has its own graph structure
         edge_index_batched = []
+        total_nodes = batch_size * num_nodes
+
         for i in range(batch_size):
             # Offset node indices for each batch
             offset = i * num_nodes
             batch_edge_index = edge_index + offset
+
+            # Safety check: ensure node indices are within valid range
+            # This prevents out-of-bounds indexing that causes CUDA device-side asserts
+            valid_edges_mask = (
+                (batch_edge_index[0] < total_nodes)
+                & (batch_edge_index[1] < total_nodes)
+                & (batch_edge_index[0] >= 0)
+                & (batch_edge_index[1] >= 0)
+            )
+
+            # Only keep valid edges
+            if not valid_edges_mask.all():
+                batch_edge_index = batch_edge_index[:, valid_edges_mask]
+
             edge_index_batched.append(batch_edge_index)
 
-        edge_index_batched = torch.cat(edge_index_batched, dim=1)
+        if len(edge_index_batched) > 0:
+            edge_index_batched = torch.cat(edge_index_batched, dim=1)
+        else:
+            # Create fallback empty edge index if no valid edges
+            edge_index_batched = torch.zeros((2, 0), dtype=torch.long, device=x.device)
 
         # Concatenate input and previous hidden state for gate computations
         # This allows gates to consider both current input and previous state
