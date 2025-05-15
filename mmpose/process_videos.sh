@@ -164,9 +164,10 @@ for EXT in "${VIDEO_EXTENSIONS[@]}"; do
       CURRENT=$((CURRENT + 1))
       BASENAME=$(basename "$VIDEO")
       FILENAME="${BASENAME%.*}"
+      EXTENSION="${BASENAME##*.}"
 
-      # Define expected output files
-      VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.mp4"
+      # Define expected output files - preserve original extension
+      VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.${EXTENSION}"
       JSON_FILE="$OUTPUT_DIR/results_${FILENAME}.json"
 
       # Verbose logging of paths being checked
@@ -185,8 +186,10 @@ for EXT in "${VIDEO_EXTENSIONS[@]}"; do
 
       # If we're checking for missing files, add files with incomplete processing to the list
       if [ "$CHECK_MISSING" = true ] || [ "$DRY_RUN" = true ]; then
-        if [[ -f "$VIS_VIDEO" && ! -f "$JSON_FILE" ]] || [[ ! -f "$VIS_VIDEO" && -f "$JSON_FILE" ]]; then
-          MISSING_FILES+=("$BASENAME (incomplete)")
+        if [[ -f "$VIS_VIDEO" && ! -f "$JSON_FILE" ]]; then
+          MISSING_FILES+=("$BASENAME (incomplete - missing JSON)")
+        elif [[ ! -f "$VIS_VIDEO" && -f "$JSON_FILE" ]]; then
+          MISSING_FILES+=("$BASENAME (incomplete - missing video)")
         elif [[ ! -f "$VIS_VIDEO" && ! -f "$JSON_FILE" ]]; then
           MISSING_FILES+=("$BASENAME (not processed)")
         fi
@@ -276,8 +279,9 @@ if [ "$VERBOSE" = true ] || [ "$CHECK_MISSING" = true ]; then
       if [ -f "$VIDEO" ]; then
         BASENAME=$(basename "$VIDEO")
         FILENAME="${BASENAME%.*}"
+        EXTENSION="${BASENAME##*.}"
 
-        VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.mp4"
+        VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.${EXTENSION}"
         JSON_FILE="$OUTPUT_DIR/results_${FILENAME}.json"
 
         # Check for partial processing (one file exists but not the other)
@@ -320,7 +324,8 @@ if [ "$CHECK_MISSING" = true ] || [ "$DRY_RUN" = true ]; then
     VIDEO_PATH="$VIDEO_DIR/$VIDEO_NAME"
     if [ -f "$VIDEO_PATH" ]; then
       FILENAME="${VIDEO_NAME%.*}"
-      VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.mp4"
+      EXTENSION="${VIDEO_NAME##*.}"
+      VIS_VIDEO="$OUTPUT_DIR/${FILENAME}.${EXTENSION}"
       JSON_FILE="$OUTPUT_DIR/results_${FILENAME}.json"
 
       echo "  Checking $VIDEO_NAME:"
