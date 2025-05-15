@@ -56,11 +56,19 @@ else:
     VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2/processed"
     NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2/processed"
 
+    # Real Life Violence Dataset paths
+    REAL_LIFE_VIOLENCE_PATH = Path(
+        "/Volumes/MARCREYES/archive/Real_Life_Violence_Dataset/processed/violent/Real_Life_Violence_Dataset/Violence/processed"
+    )
+    REAL_LIFE_NONVIOLENCE_PATH = Path(
+        "/Volumes/MARCREYES/archive/Real_Life_Violence_Dataset/processed/nonviolent/Real_Life_Violence_Dataset/NonViolence/processed"
+    )
+
 # Training hyperparameters
 BATCH_SIZE = 32
-NUM_EPOCHS = 2
+NUM_EPOCHS = 50
 LEARNING_RATE = 0.001
-SAMPLE_PERCENTAGE = 1  # Percentage of data to use (1-100)
+SAMPLE_PERCENTAGE = 100  # Percentage of data to use (1-100)
 
 # Model and evaluation constants
 MODEL_HIDDEN_CHANNELS = 64
@@ -536,6 +544,19 @@ def main() -> None:
     except Exception as e:
         print(f"Error loading Camera 2 data: {e}")
         # Continue with Camera 1 data only
+
+    # Real Life Violence Dataset (optional)
+    try:
+        if REAL_LIFE_VIOLENCE_PATH.exists() and REAL_LIFE_NONVIOLENCE_PATH.exists():
+            print("Loading data from Real Life Violence Dataset...")
+            graphs_real_life, labels_real_life = load_mmpose_data(
+                REAL_LIFE_VIOLENCE_PATH, REAL_LIFE_NONVIOLENCE_PATH, sample_percentage
+            )
+            all_graphs.extend(graphs_real_life)
+            all_labels.extend(labels_real_life)
+    except Exception as e:
+        print(f"Error loading Real Life Violence Dataset: {e}")
+        # Continue with existing data
 
     # Split data into train/val/test sets
     train_graphs, test_graphs, train_labels, test_labels = train_test_split(
