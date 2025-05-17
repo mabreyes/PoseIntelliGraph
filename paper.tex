@@ -9,6 +9,8 @@
 \usepackage{hyperref}
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{adjustbox}
+\usepackage{tikzscale}
 \usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc, shapes.multipart}
 
 \pgfplotsset{compat=1.16}
@@ -25,7 +27,7 @@
 \IEEEauthorblockA{\textit{Department of Computer Science} \\
 \textit{University of the Philippines Diliman}\\
 P. Velasquez Street, Diliman, Quezon City, 1800 Metro Manila \\
-mbreyes12@up.edy.ph}
+mbreyes12@up.edu.ph}
 }
 
 \maketitle
@@ -76,8 +78,9 @@ We formulate violence detection as a binary classification problem. Given a sequ
 \subsection{System Architecture}
 PoseIntelliGraph consists of three main components: (1) a graph construction module that converts pose keypoints into graph representations, (2) a multi-layer GNN for spatial feature extraction, and (3) a transformer encoder for temporal modeling and final classification. Fig. 1 illustrates the overall architecture.
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
 \centering
+\begin{adjustbox}{max width=\textwidth}
 \begin{tikzpicture}[
     node distance=0.8cm,
     box/.style={rectangle, draw, minimum width=2.2cm, minimum height=1cm, text centered, rounded corners, fill=blue!10},
@@ -119,9 +122,10 @@ PoseIntelliGraph consists of three main components: (1) a graph construction mod
     \node [draw, dashed, fit=(gcn) (gat) (gin), inner sep=0.2cm] (gnn_box) {};
 
 \end{tikzpicture}
+\end{adjustbox}
 \caption{Overall architecture of the PoseIntelliGraph system. The pipeline processes human pose keypoints through a series of specialized graph convolution layers before applying transformer-based temporal modeling for final violence classification.}
 \label{fig:architecture}
-\end{figure}
+\end{figure*}
 
 \subsection{Graph Representation}
 For each detected person in a video frame, we construct a graph $G = (V, E)$ where vertices $V$ represent keypoints (typically 17 joints following the COCO format) and edges $E$ represent anatomical connections between joints. Each node feature is the 2D coordinate of the corresponding keypoint.
@@ -134,7 +138,7 @@ Fig. \ref{fig:pose_graph} illustrates how human pose keypoints are converted int
     \item \textbf{Edge construction:} Edges are created based on the human skeletal structure, with edge attributes computed as the Euclidean distances between connected joints.
 \end{enumerate}
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
 \centering
 \begin{tikzpicture}[
     node distance=1cm,
@@ -204,7 +208,7 @@ Fig. \ref{fig:pose_graph} illustrates how human pose keypoints are converted int
 \end{tikzpicture}
 \caption{Conversion of human pose keypoints to graph representation. Joints become nodes and anatomical connections become edges in the graph.}
 \label{fig:pose_graph}
-\end{figure}
+\end{figure*}
 
 To handle occlusions and detection errors, we apply a pre-processing step that:
 \begin{enumerate}
@@ -242,6 +246,7 @@ The architecture of our multi-layer GNN is detailed in Fig. \ref{fig:gnn_layers}
 
 \begin{figure*}[htbp]
 \centering
+\begin{adjustbox}{max width=\textwidth}
 \begin{tikzpicture}[
     box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, text centered, rounded corners, fill=blue!10},
     arrow/.style={->, >=stealth, thick},
@@ -294,6 +299,7 @@ The architecture of our multi-layer GNN is detailed in Fig. \ref{fig:gnn_layers}
     \node[draw=red, dashed, ->, >=stealth, right=0.2cm of output, font=\footnotesize] (skip_legend) {JumpingKnowledge};
 
 \end{tikzpicture}
+\end{adjustbox}
 \caption{Detailed architecture of the multi-layer GNN component showing the sequence of specialized graph convolution layers with JumpingKnowledge connections for preserving features from earlier layers.}
 \label{fig:gnn_layers}
 \end{figure*}
@@ -319,6 +325,7 @@ The sequence of graph embeddings $Z = \{z_1, z_2, ..., z_T\}$ from $T$ consecuti
 
 \begin{figure*}[htbp]
 \centering
+\begin{adjustbox}{max width=\textwidth}
 \begin{tikzpicture}[
     node distance=0.8cm,
     box/.style={rectangle, draw, minimum width=2cm, minimum height=0.7cm, text centered, rounded corners, fill=yellow!10},
@@ -373,6 +380,7 @@ The sequence of graph embeddings $Z = \{z_1, z_2, ..., z_T\}$ from $T$ consecuti
     \draw[arrow, dashed, color=red] (addnorm1) to[out=350,in=170] (addnorm2);
 
 \end{tikzpicture}
+\end{adjustbox}
 \caption{Transformer encoder architecture for temporal modeling of pose graphs. The model uses 4 attention heads and 2 transformer blocks to capture complex temporal dependencies in the sequence of pose graph embeddings.}
 \label{fig:transformer}
 \end{figure*}
