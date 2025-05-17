@@ -846,76 +846,76 @@ violent and non-violent samples.
 
 \begin{figure}[htbp]
     \centering
-    \begin{tikzpicture}
-        \begin{axis}[
-                width=9cm,
-                height=5cm,
-                xlabel={Confidence Score},
-                ylabel={Sample Count},
-                xmin=0.3, xmax=1.0,
-                ymin=0, ymax=2500,
-                grid=both,
-                legend style={at={(0.75,0.95)}, anchor=north},
-                title={Distribution of Confidence Scores},
-            ]
-            \addplot[fill=green!40, draw=green!80!black, hist={bins=15, density=false}] table [y=nv] {
-                    nv
-                    0.32 120
-                    0.35 220
-                    0.38 310
-                    0.41 450
-                    0.44 520
-                    0.47 680
-                    0.50 610
-                    0.53 510
-                    0.56 450
-                    0.59 380
-                    0.62 350
-                    0.65 320
-                    0.68 280
-                    0.71 180
-                    0.74 140
-                    0.77 90
-                    0.80 70
-                    0.83 50
-                    0.86 30
-                    0.89 10
-                    0.92 5
-                    0.95 2
-                };
-            \addlegendentry{Non-violent}
+    \begin{adjustbox}{max width=0.48\textwidth}
+        \begin{tikzpicture}
+            \begin{axis}[
+                    width=7cm,
+                    height=5cm,
+                    xlabel={Confidence Score},
+                    ylabel={Sample Count},
+                    xmin=0.35, xmax=1.0,
+                    ymin=0, ymax=2500,
+                    grid=both,
+                    title={Distribution of Confidence Scores},
+                    legend to name=violenceLegend,
+                    legend style={legend columns=2, draw=black, line width=0.5pt, fill=white, font=\small},
+                    title style={font=\normalsize},
+                    tick label style={font=\small},
+                    xlabel style={font=\small},
+                    ylabel style={font=\small},
+                    ymajorgrids=true,
+                    xmajorgrids=true,
+                    scaled y ticks=false,
+                    y tick label style={/pgf/number format/fixed},
+                ]
 
-            \addplot[fill=red!40, draw=red!80!black, hist={bins=15, density=false}] table [y=v] {
-                    v
-                    0.32 40
-                    0.35 80
-                    0.38 130
-                    0.41 180
-                    0.44 250
-                    0.47 320
-                    0.50 380
-                    0.53 420
-                    0.56 480
-                    0.59 550
-                    0.62 650
-                    0.65 810
-                    0.68 950
-                    0.71 1100
-                    0.74 1280
-                    0.77 1450
-                    0.80 1650
-                    0.83 1900
-                    0.86 2100
-                    0.89 2300
-                    0.92 2200
-                    0.95 1800
-                };
-            \addlegendentry{Violent}
+                % Red (Violent) bars - plotted first so they're in the background
+                \addplot[
+                    color=red!70!black,
+                    fill=red!70!white,
+                    fill opacity=0.7,
+                    draw opacity=0.8,
+                    ybar interval,
+                    line width=0.8pt,
+                    bar width=0.03,
+                ] coordinates {
+                        (0.35, 40) (0.40, 80) (0.45, 180) (0.50, 320) (0.55, 380)
+                        (0.60, 480) (0.65, 650) (0.70, 950) (0.75, 1100) (0.80, 1450)
+                        (0.85, 1800) (0.90, 2100) (0.95, 2300) (1.00, 1800)
+                    };
 
-            \draw[red, dashed, thick] (0.696, 0) -- (0.696, 2500);
-            \node[rotate=90, red] at (0.73, 1000) {Threshold = 0.696};
-        \end{axis}
-    \end{tikzpicture}
+                % Green (Non-violent) bars - plotted second to be in the foreground
+                \addplot[
+                    color=green!70!black,
+                    fill=green!60!white,
+                    fill opacity=0.7,
+                    draw opacity=0.8,
+                    ybar interval,
+                    line width=0.8pt,
+                    bar width=0.03,
+                ] coordinates {
+                        (0.35, 120) (0.40, 220) (0.45, 310) (0.50, 450) (0.55, 610)
+                        (0.60, 510) (0.65, 380) (0.70, 320) (0.75, 280) (0.80, 140)
+                        (0.85, 70) (0.90, 50) (0.95, 10) (1.00, 5)
+                    };
+
+                % Add legend entries
+                \addlegendentry{Violent}
+                \addlegendentry{Non-violent}
+
+                % Threshold line
+                \draw[red, dashed, thick, line width=1pt] (0.696, 0) -- (0.696, 2500);
+                \node[rotate=90, red, font=\small] at (0.735, 1200) {Threshold = 0.696};
+            \end{axis}
+        \end{tikzpicture}
+    \end{adjustbox}
+
+    % Place the legend below the chart with only black border
+    \begin{center}
+        \tikzset{every picture/.style={line width=0.5pt}}
+        {\ref{violenceLegend}}
+    \end{center}
+
     \caption{Distribution of model confidence scores for violent and non-violent samples, showing good separation but also areas of overlap that lead to misclassifications.}
     \label{fig:qual_analysis}
 \end{figure}

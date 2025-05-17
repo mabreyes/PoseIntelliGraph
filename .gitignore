@@ -39,7 +39,7 @@ openpose_venv/
 .ipynb_checkpoints/
 
 # OS specific files
-.DS_Store
+**/.DS_Store
 Thumbs.db
 *.log
 
