@@ -40,6 +40,13 @@ We present PoseIntelliGraph, a novel deep learning approach for violence detecti
 violence detection, graph neural networks, pose estimation, transformers, action recognition, computer vision
 \end{IEEEkeywords}
 
+\begin{figure*}
+    \centering
+    \includegraphics[width=1\textwidth]{CS28X-Student_Report_Latex_Template/New Project.jpg}
+    \caption{MMPose-generated pose estimation with heatmap (left) Non-violent (right) Violent}
+    \label{fig:enter-label}
+\end{figure*}
+
 \section{Introduction}
 The automatic detection of violent behavior in video content represents a significant challenge in computer vision and artificial intelligence research. With the exponential growth of video data across social media, surveillance systems, and streaming platforms, there is an increasing need for reliable automated methods to identify potentially harmful content \cite{demarty2014violent}. Traditional approaches have primarily relied on appearance-based features extracted from RGB video frames, employing convolutional neural networks (CNNs) to classify violent actions \cite{sudhakaran2017learning}. However, these methods often struggle with generalization across different environments, lighting conditions, and camera angles.
 
@@ -52,7 +59,6 @@ Despite these advances, existing research has insufficiently explored the integr
 In this paper, we introduce PoseIntelliGraph, a hybrid architecture that combines specialized graph convolution layers with a Transformer encoder for violence detection.
 
 \section{Related Work}
-
 \subsection{Violence Detection}
 Violence detection in videos has been approached through various techniques over the years. Early methods relied on hand-crafted features like motion trajectories and spatiotemporal interest points \cite{nievas2011violence}. More recent approaches leverage deep learning, with CNN-based methods becoming prevalent. Sudhakaran and Lanz \cite{sudhakaran2017learning} proposed a combined CNN-LSTM architecture that captures both spatial and temporal aspects of violent actions. Wu et al. \cite{wu2020not} developed a system using 3D CNNs to capture motion characteristics specific to violent behavior.
 
