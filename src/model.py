@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 
 # Import the GRNN component
-from grnn import ViolenceDetectionGRNN
+from .grnn import ViolenceDetectionGRNN # Relative import for intra-package
 
 
 def get_device() -> torch.device:
@@ -63,7 +63,7 @@ class ViolenceDetectionGNN(nn.Module):
             transformer_heads: Ignored (kept for compatibility)
             transformer_layers: Used as num_layers for GRNN
         """
-        super(ViolenceDetectionGNN, self).__init__()
+        super().__init__()
 
         # Create the actual GRNN model
         self.grnn_model = ViolenceDetectionGRNN(
@@ -90,8 +90,13 @@ class ViolenceDetectionGNN(nn.Module):
         """
         # Reshape x for GRNN (which expects sequence data)
         batch_size = torch.max(batch).item() + 1
-        # Reshape assuming single time step for compatibility with old interface
-        # For the compatibility layer, we treat the input as a sequence of length 1
+        # Reshape assuming single time step for compatibility with old interface.
+        # For the compatibility layer, we treat the input as a sequence of length 1.
+        # IMPORTANT: This view operation assumes that all graphs in the batch
+        # have the same number of nodes, or that x has been padded appropriately
+        # before this call if num_nodes varies.
+        # num_nodes_per_graph = x.size(0) // batch_size # This would only work if x is already [B*N, F] and N is fixed.
+        # A robust solution for variable-sized graphs would require padding or different batch handling.
         x_reshaped = x.view(batch_size, 1, -1, x.size(-1))
 
         # Process through the GRNN model

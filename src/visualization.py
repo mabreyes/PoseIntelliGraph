@@ -53,17 +53,17 @@ def plot_training_metrics(
     plt.xlabel("Epoch")
     plt.ylabel("AUC")
     plt.legend()
-    plt.title("ROC AUC Score")
+    plt.title("Validation ROC AUC Score")  # More specific title
     plt.grid(True, alpha=0.3)
 
-    # If available, plot additional metrics
+    # If available, plot additional metrics like F1 score
     if "val_f1" in metrics:
         plt.subplot(2, 2, 3)
-        plt.plot(metrics["val_f1"], label="Validation F1")
+        plt.plot(metrics["val_f1"], label="Validation F1 Score")
         plt.xlabel("Epoch")
         plt.ylabel("F1 Score")
         plt.legend()
-        plt.title("F1 Score")
+        plt.title("Validation F1 Score")
         plt.grid(True, alpha=0.3)
 
     # Plot accuracy if available
@@ -73,10 +73,10 @@ def plot_training_metrics(
         plt.xlabel("Epoch")
         plt.ylabel("Accuracy")
         plt.legend()
-        plt.title("Accuracy")
+        plt.title("Validation Accuracy")
         plt.grid(True, alpha=0.3)
 
-    plt.tight_layout()
+    plt.tight_layout()  # Adjust layout to prevent overlapping titles/labels
 
     if output_path:
         plt.savefig(output_path)
@@ -109,75 +109,82 @@ def plot_classification_metrics(
     plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {auc_score:.4f})")
 
     # Mark threshold point
-    threshold_idx = np.argmin(np.abs(thresholds - threshold))
-    plt.plot(
-        fpr[threshold_idx],
-        tpr[threshold_idx],
-        "ro",
-        label=f"Threshold = {threshold:.4f}",
-    )
+    if thresholds.size > 0 : # Ensure thresholds is not empty
+        threshold_idx = np.argmin(np.abs(thresholds - threshold))
+        plt.plot(
+            fpr[threshold_idx],
+            tpr[threshold_idx],
+            "ro",
+            label=f"Threshold = {threshold:.4f}",
+        )
 
-    plt.plot([0, 1], [0, 1], "k--")
+    plt.plot([0, 1], [0, 1], "k--", label="No Skill") # Added label for clarity
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve")
+    plt.title("Receiver Operating Characteristic (ROC) Curve")
     plt.legend(loc="lower right")
     plt.grid(True, alpha=0.3)
 
     # Precision-Recall Curve
     plt.subplot(2, 3, 2)
     precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-
-    # Find closest threshold value in PR curve
-    pr_thresholds = np.append(
-        pr_thresholds, 1.0
-    )  # Add 1.0 to match precision/recall arrays
-    threshold_idx_pr = np.argmin(np.abs(pr_thresholds - threshold))
-
+    
+    # Ensure pr_thresholds is not empty before finding closest threshold
+    # pr_thresholds does not include an explicit threshold for recall=0, precision=undefined (or P=1, R=0 for some conventions)
+    # The last precision and recall values are 1.0 and 0.0 respectively, pr_thresholds is shorter by 1.
+    
     plt.plot(recall, precision, label="Precision-Recall Curve")
-    plt.plot(
-        recall[threshold_idx_pr],
-        precision[threshold_idx_pr],
-        "ro",
-        label=f"Threshold = {threshold:.4f}",
-    )
+    
+    # Find point on PR curve closest to the chosen threshold for marking
+    # This can be tricky as pr_thresholds may not align perfectly with `threshold`
+    # A common approach is to find the point where PR curve is closest to (1,1) or other strategy.
+    # For now, let's mark the point based on the F1 score at the given threshold.
+    y_pred_at_threshold = (y_score >= threshold).astype(int)
+    p_at_thresh = precision_score(y_true, y_pred_at_threshold, zero_division=0)
+    r_at_thresh = recall_score(y_true, y_pred_at_threshold, zero_division=0)
+    if p_at_thresh > 0 or r_at_thresh > 0: # Only plot if the point is meaningful
+        plt.plot(r_at_thresh, p_at_thresh, "ro", label=f"Point at Threshold {threshold:.4f}")
 
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel("Recall")
     plt.ylabel("Precision")
     plt.title("Precision-Recall Curve")
-    plt.legend(loc="upper right")
+    plt.legend(loc="lower left") # Adjusted for better visibility
     plt.grid(True, alpha=0.3)
 
     # Confusion Matrix
     plt.subplot(2, 3, 3)
     y_pred = (y_score >= threshold).astype(int)
-    cm = confusion_matrix(y_true, y_pred)
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1]) # Explicitly use labels for consistency
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False,
+                xticklabels=["Non-violent", "Violent"], 
+                yticklabels=["Non-violent", "Violent"])
     plt.xlabel("Predicted Label")
     plt.ylabel("True Label")
     plt.title("Confusion Matrix")
-    plt.xticks([0.5, 1.5], ["Non-violent", "Violent"])
-    plt.yticks([0.5, 1.5], ["Non-violent", "Violent"])
+    # plt.xticks([0.5, 1.5], ["Non-violent", "Violent"]) # Handled by heatmap xticklabels
+    # plt.yticks([0.5, 1.5], ["Non-violent", "Violent"]) # Handled by heatmap yticklabels
 
     # Threshold vs. F1 score
     plt.subplot(2, 3, 4)
     f1_scores = []
-    threshold_range = np.linspace(0, 1, 100)
-    for t in threshold_range:
-        y_pred = (y_score >= t).astype(int)
-        f1 = f1_score(y_true, y_pred, zero_division=0)
+    # np.linspace can sometimes miss exact points like 0 or 1 if num is not chosen carefully.
+    # Using a slightly adjusted range or more points for smoother curve if needed.
+    threshold_range = np.linspace(0.01, 0.99, 100) 
+    for t_scan in threshold_range:
+        y_pred_scan = (y_score >= t_scan).astype(int)
+        f1 = f1_score(y_true, y_pred_scan, zero_division=0)
         f1_scores.append(f1)
 
-    plt.plot(threshold_range, f1_scores)
+    plt.plot(threshold_range, f1_scores, label="F1 Score per Threshold")
     plt.axvline(
         x=threshold,
         color="r",
         linestyle="--",
-        label=f"Selected threshold: {threshold:.4f}",
+        label=f"Selected Threshold: {threshold:.4f}",
     )
     plt.xlabel("Threshold")
     plt.ylabel("F1 Score")
@@ -185,48 +192,50 @@ def plot_classification_metrics(
     plt.legend()
     plt.grid(True, alpha=0.3)
 
-    # Metrics at threshold
+    # Metrics at threshold (Text display or Bar Chart)
     plt.subplot(2, 3, 5)
-    y_pred = (y_score >= threshold).astype(int)
+    # y_pred already calculated
     accuracy = accuracy_score(y_true, y_pred)
-    precision_val = precision_score(y_true, y_pred, zero_division=0)
-    recall_val = recall_score(y_true, y_pred, zero_division=0)
-    f1 = f1_score(y_true, y_pred, zero_division=0)
+    # p_at_thresh, r_at_thresh already calculated
+    f1_val = f1_score(y_true, y_pred, zero_division=0) # F1 at the chosen threshold
 
-    metrics_vals = [accuracy, precision_val, recall_val, f1]
+    metrics_vals = [accuracy, p_at_thresh, r_at_thresh, f1_val]
     metrics_names = ["Accuracy", "Precision", "Recall", "F1 Score"]
 
-    # Create a horizontal bar chart
     y_pos = np.arange(len(metrics_names))
-    plt.barh(y_pos, metrics_vals, align="center")
+    bars = plt.barh(y_pos, metrics_vals, align="center", color=['skyblue', 'lightcoral', 'lightgreen', 'gold'])
     plt.yticks(y_pos, metrics_names)
-    plt.xlim([0, 1])
-
-    # Add values to bars
-    for i, v in enumerate(metrics_vals):
-        plt.text(v + 0.01, i, f"{v:.4f}", va="center")
-
+    plt.xlim([0, 1.05]) # Adjusted limit for text
     plt.xlabel("Score")
     plt.title(f"Metrics at Threshold = {threshold:.4f}")
     plt.grid(True, alpha=0.3, axis="x")
 
+    # Add values to bars
+    for bar in bars:
+        plt.text(bar.get_width() + 0.01, bar.get_y() + bar.get_height()/2, 
+                 f"{bar.get_width():.4f}", va='center')
+
+
     # Distribution of scores
     plt.subplot(2, 3, 6)
-    positive_scores = y_score[y_true == 1]
-    negative_scores = y_score[y_true == 0]
+    # Filter out NaN or inf scores if any, though y_score should be probabilities
+    y_score_finite = y_score[np.isfinite(y_score)]
+    positive_scores = y_score_finite[y_true[np.isfinite(y_score)] == 1]
+    negative_scores = y_score_finite[y_true[np.isfinite(y_score)] == 0]
 
-    plt.hist(negative_scores, bins=20, alpha=0.5, label="Non-violent", color="green")
-    plt.hist(positive_scores, bins=20, alpha=0.5, label="Violent", color="red")
+
+    plt.hist(negative_scores, bins=20, alpha=0.7, label="Non-violent (True)", color="green")
+    plt.hist(positive_scores, bins=20, alpha=0.7, label="Violent (True)", color="red")
     plt.axvline(
-        x=threshold, color="k", linestyle="--", label=f"Threshold: {threshold:.4f}"
+        x=threshold, color="blue", linestyle="--", label=f"Selected Threshold: {threshold:.4f}"
     )
-    plt.xlabel("Score")
-    plt.ylabel("Count")
-    plt.title("Distribution of Scores")
+    plt.xlabel("Predicted Score")
+    plt.ylabel("Frequency")
+    plt.title("Score Distributions by True Class")
     plt.legend()
     plt.grid(True, alpha=0.3)
 
-    plt.tight_layout()
+    plt.tight_layout() # Adjust layout
 
     if output_path:
         plt.savefig(output_path)

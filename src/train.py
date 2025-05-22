@@ -14,250 +14,51 @@ in MMPose JSON format. It includes functionality for:
 from __future__ import annotations
 
 import argparse
-import json
+# import json # No longer directly used in train.py
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn.metrics import (
-    confusion_matrix,
-    f1_score,
-    precision_recall_curve,
-    roc_auc_score,
-    roc_curve,
-)
+# confusion_matrix, f1_score, precision_recall_curve, roc_curve were for find_optimal_threshold (now in evaluation_utils)
+from sklearn.metrics import roc_auc_score # Retained for train_model, evaluate_model
 from sklearn.model_selection import train_test_split
-from torch_geometric.data import Data
+from torch_geometric.data import Data # Retained for main() -> graph.y assignment
 from torch_geometric.loader import DataLoader
-from tqdm import tqdm
+from tqdm import tqdm # Retained for train_model, evaluate_model loops
 
 import visualization as viz
 
 # Import components from separate files
-from grnn import create_pose_graph
+from .graph_utils import load_mmpose_data # create_pose_graph is not directly used here anymore
+from .evaluation_utils import find_optimal_threshold
 from model import ViolenceDetectionGNN, get_device
 
-# Configuration constants
-# Data paths
-if torch.cuda.is_available():
-    # GPU detected paths
-    DATA_PATH = Path("./json")
-    VIOLENT_PATH_CAM1 = DATA_PATH / "violent/cam1"
-    NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1"
-    VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2"
-    NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2"
+# Import configuration values
+from .config import (
+    # DATA_PATH,  # Not directly used in train.py; paths are constructed from specific constants
+    VIOLENT_PATH_CAM1,
+    NON_VIOLENT_PATH_CAM1,
+    VIOLENT_PATH_CAM2,
+    NON_VIOLENT_PATH_CAM2,
+    REAL_LIFE_VIOLENCE_PATH,
+    REAL_LIFE_NONVIOLENCE_PATH,
+    BATCH_SIZE,
+    NUM_EPOCHS,
+    LEARNING_RATE,
+    SAMPLE_PERCENTAGE,
+    MODEL_HIDDEN_CHANNELS,
+    MODEL_TRANSFORMER_HEADS,
+    MODEL_TRANSFORMER_LAYERS,
+    TEST_SPLIT_RATIO,
+    VALIDATION_SPLIT_RATIO,
+    RANDOM_SEED,
+    MODEL_IN_CHANNELS, # Added as it's used by ViolenceDetectionGNN
+)
 
-    # Real Life Violence Dataset paths
-    REAL_LIFE_VIOLENCE_PATH = Path("Real_Life_Violence_Dataset/Violence/processed")
-    REAL_LIFE_NONVIOLENCE_PATH = Path(
-        "Real_Life_Violence_Dataset/NonViolence/processed"
-    )
-
-else:
-    # Local paths (no GPU)
-    DATA_PATH = Path("/Volumes/MARCREYES/violence-detection-dataset")
-    VIOLENT_PATH_CAM1 = DATA_PATH / "violent/cam1/processed"
-    NON_VIOLENT_PATH_CAM1 = DATA_PATH / "non-violent/cam1/processed"
-    VIOLENT_PATH_CAM2 = DATA_PATH / "violent/cam2/processed"
-    NON_VIOLENT_PATH_CAM2 = DATA_PATH / "non-violent/cam2/processed"
-
-    # Real Life Violence Dataset paths
-    REAL_LIFE_VIOLENCE_PATH = Path(
-        "/Volumes/MARCREYES/archive/Real_Life_Violence_Dataset/processed/violent/Real_Life_Violence_Dataset/Violence/processed"
-    )
-    REAL_LIFE_NONVIOLENCE_PATH = Path(
-        "/Volumes/MARCREYES/archive/Real_Life_Violence_Dataset/processed/nonviolent/Real_Life_Violence_Dataset/NonViolence/processed"
-    )
-
-# Training hyperparameters
-BATCH_SIZE = 32
-NUM_EPOCHS = 1
-LEARNING_RATE = 0.001
-SAMPLE_PERCENTAGE = 1  # Percentage of data to use (1-100)
-
-# Model and evaluation constants
-MODEL_HIDDEN_CHANNELS = 64
-MODEL_TRANSFORMER_HEADS = 4
-MODEL_TRANSFORMER_LAYERS = 2
-TEST_SPLIT_RATIO = 0.2
-VALIDATION_SPLIT_RATIO = 0.25
-RANDOM_SEED = 42
-
-
-def find_optimal_threshold(
-    y_true: np.ndarray, y_score: np.ndarray
-) -> Tuple[float, Dict[str, float]]:
-    """
-    Calculate the optimal classification threshold using multiple methods.
-
-    Implements several threshold optimization techniques:
-    1. Youden's J statistic (maximizing sensitivity + specificity - 1)
-    2. Minimum distance to perfect classifier (0,1) point in ROC space
-    3. Maximum F1 score
-
-    The primary method used is Youden's J statistic, which is widely accepted
-    in the academic literature for binary classification threshold optimization.
-
-    Args:
-        y_true: Ground truth binary labels
-        y_score: Predicted scores (probabilities)
-
-    Returns:
-        Tuple of (optimal threshold, dictionary of metrics at that threshold)
-    """
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
-
-    # Calculate Youden's J statistic (J = Sensitivity + Specificity - 1)
-    j_scores = tpr - fpr
-    optimal_idx_j = np.argmax(j_scores)
-    optimal_threshold_j = thresholds[optimal_idx_j]
-
-    # Calculate distance to (0,1) point in ROC space
-    distances = np.sqrt((1 - tpr) ** 2 + fpr**2)
-    optimal_idx_d = np.argmin(distances)
-    optimal_threshold_d = thresholds[optimal_idx_d]
-
-    # Calculate F1 score at different thresholds
-    precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-
-    # Calculate F1 for all possible thresholds
-    f1_scores = []
-    for t in thresholds:
-        y_pred = (y_score >= t).astype(int)
-        f1 = f1_score(y_true, y_pred)
-        f1_scores.append(f1)
-
-    optimal_idx_f1 = np.argmax(f1_scores)
-    optimal_threshold_f1 = thresholds[optimal_idx_f1]
-
-    # Choose Youden's J as the primary method (most common in academic literature)
-    optimal_threshold = optimal_threshold_j
-
-    # Calculate confusion matrix at optimal threshold
-    y_pred = (y_score >= optimal_threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-
-    # Calculate various metrics at the optimal threshold
-    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
-    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
-    precision_val = tp / (tp + fp) if (tp + fp) > 0 else 0
-
-    # Create metrics dictionary
-    metrics = {
-        "threshold_j": optimal_threshold_j,
-        "threshold_distance": optimal_threshold_d,
-        "threshold_f1": optimal_threshold_f1,
-        "sensitivity": sensitivity,
-        "specificity": specificity,
-        "precision": precision_val,
-        "f1_score": f1_scores[optimal_idx_j],
-        "youdens_j": j_scores[optimal_idx_j],
-    }
-
-    return optimal_threshold, metrics
-
-
-def load_mmpose_data(
-    violent_path: Path, non_violent_path: Path, sample_percentage: int = 100
-) -> Tuple[List[Data], List[float]]:
-    """
-    Load MMPose JSON files and convert them to graph data.
-
-    Processes JSON files containing pose keypoints from both violent and non-violent
-    video frames. Each person instance in a frame is converted to a graph representation
-    suitable for GNN processing. The function supports processing a subset of the data
-    using the sample_percentage parameter.
-
-    Args:
-        violent_path: Path to violent pose JSON files
-        non_violent_path: Path to non-violent pose JSON files
-        sample_percentage: Percentage of files to process (1-100)
-
-    Returns:
-        Tuple of (list of graph Data objects, list of corresponding labels)
-    """
-    # Validate sample percentage
-    if not 1 <= sample_percentage <= 100:
-        raise ValueError("sample_percentage must be between 1 and 100")
-
-    all_graphs = []
-    all_labels = []
-
-    # Get all JSON files from the violent directory
-    violent_files = list(violent_path.glob("*.json"))
-    if not violent_files:
-        raise ValueError(f"No JSON files found in violent directory: {violent_path}")
-
-    print(f"Found {len(violent_files)} violent JSON files")
-
-    # Calculate number of files to process based on percentage
-    num_violent_files = max(1, int(len(violent_files) * sample_percentage / 100))
-
-    # Process violent samples
-    for json_file in tqdm(
-        violent_files[:num_violent_files], desc="Processing violent samples"
-    ):
-        with open(json_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        # Process each frame in the JSON file
-        for frame_data in data.get("instance_info", []):
-            # Get frame ID (not used but kept for consistency)
-            _ = frame_data.get("frame_id")
-            instances = frame_data.get("instances", [])
-
-            for instance in instances:
-                keypoints = instance.get("keypoints", [])
-                if keypoints:
-                    # Convert to numpy array
-                    keypoints_np = np.array(keypoints)
-
-                    # Create graph from keypoints
-                    graph = create_pose_graph(keypoints_np)
-                    if graph is not None:
-                        all_graphs.append(graph)
-                        all_labels.append(1.0)  # Violent label
-
-    # Process non-violent data
-    non_violent_files = list(non_violent_path.glob("*.json"))
-    if not non_violent_files:
-        raise ValueError(
-            f"No JSON files found in non-violent directory: {non_violent_path}"
-        )
-
-    print(f"Found {len(non_violent_files)} non-violent JSON files")
-
-    # Calculate number of files to process based on percentage
-    num_nonviolent_files = max(1, int(len(non_violent_files) * sample_percentage / 100))
-
-    # Process non-violent samples
-    for json_file in tqdm(
-        non_violent_files[:num_nonviolent_files], desc="Processing non-violent samples"
-    ):
-        with open(json_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        # Process each frame in the JSON file
-        for frame_data in data.get("instance_info", []):
-            # Get frame ID (not used but kept for consistency)
-            _ = frame_data.get("frame_id")
-            instances = frame_data.get("instances", [])
-
-            for instance in instances:
-                keypoints = instance.get("keypoints", [])
-                if keypoints:
-                    # Convert to numpy array
-                    keypoints_np = np.array(keypoints)
-
-                    # Create graph from keypoints
-                    graph = create_pose_graph(keypoints_np)
-                    if graph is not None:
-                        all_graphs.append(graph)
-                        all_labels.append(0.0)  # Non-violent label
-
-    return all_graphs, all_labels
+# find_optimal_threshold function has been moved to src.evaluation_utils
+# load_mmpose_data function has been moved to src.graph_utils
 
 
 def train_model(
@@ -453,37 +254,37 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--epochs",
         type=int,
-        default=NUM_EPOCHS,
+        default=NUM_EPOCHS,  # Now from config
         help=f"Number of training epochs (default: {NUM_EPOCHS})",
     )
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=BATCH_SIZE,
+        default=BATCH_SIZE,  # Now from config
         help=f"Training batch size (default: {BATCH_SIZE})",
     )
     parser.add_argument(
         "--learning-rate",
         type=float,
-        default=LEARNING_RATE,
+        default=LEARNING_RATE,  # Now from config
         help=f"Learning rate (default: {LEARNING_RATE})",
     )
     parser.add_argument(
         "--sample-percentage",
         type=int,
-        default=SAMPLE_PERCENTAGE,
+        default=SAMPLE_PERCENTAGE,  # Now from config
         help=f"Percentage of data to use (default: {SAMPLE_PERCENTAGE})",
     )
     parser.add_argument(
         "--hidden-channels",
         type=int,
-        default=MODEL_HIDDEN_CHANNELS,
+        default=MODEL_HIDDEN_CHANNELS,  # Now from config
         help=f"Hidden channels in model (default: {MODEL_HIDDEN_CHANNELS})",
     )
     parser.add_argument(
         "--transformer-layers",
         type=int,
-        default=MODEL_TRANSFORMER_LAYERS,
+        default=MODEL_TRANSFORMER_LAYERS,  # Now from config
         help=f"Transformer layers in model (default: {MODEL_TRANSFORMER_LAYERS})",
     )
     parser.add_argument(
@@ -607,9 +408,9 @@ def main() -> None:
     print(f"Using device: {device}")
 
     model = ViolenceDetectionGNN(
-        in_channels=2,  # x, y coordinates
+        in_channels=MODEL_IN_CHANNELS,  # Now from config
         hidden_channels=hidden_channels,
-        transformer_heads=MODEL_TRANSFORMER_HEADS,
+        transformer_heads=MODEL_TRANSFORMER_HEADS, # Now from config
         transformer_layers=transformer_layers,
     ).to(device)
 

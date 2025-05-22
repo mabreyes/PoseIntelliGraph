@@ -20,17 +20,19 @@ import torch
 from torch_geometric.data import Data
 
 # Import from separate component files
-from grnn import create_pose_graph
+from .graph_utils import create_pose_graph # Updated import
 from model import ViolenceDetectionGNN, get_device
 
-# Constants for inference
-DEFAULT_MODEL_PATH = "violence_detection_model.pt"
-DEFAULT_OUTPUT_PATH = "violence_scores.json"
-THRESHOLD_MARGIN = 0.2  # Margin for interpretation confidence levels
-MODEL_IN_CHANNELS = 2
-MODEL_HIDDEN_CHANNELS = 64
-MODEL_TRANSFORMER_HEADS = 4
-MODEL_TRANSFORMER_LAYERS = 2
+# Import configuration values
+from .config import (
+    DEFAULT_MODEL_PATH,
+    DEFAULT_OUTPUT_PATH,
+    THRESHOLD_MARGIN,
+    MODEL_IN_CHANNELS,
+    MODEL_HIDDEN_CHANNELS,
+    MODEL_TRANSFORMER_HEADS,
+    MODEL_TRANSFORMER_LAYERS,
+)
 
 
 def interpret_score(score: float, threshold: float) -> Tuple[str, bool]:
@@ -89,7 +91,12 @@ def load_and_process_json(json_file: Path) -> List[Tuple[int, List[Data]]]:
                 # Convert to numpy array
                 keypoints_np = np.array(keypoints)
 
-                # Create graph from keypoints
+                # Ensure keypoints_np is (N, 3) for create_pose_graph
+                if keypoints_np.ndim == 2 and keypoints_np.shape[1] == 2:
+                    # Add a dummy confidence of 1.0 if not present
+                    keypoints_np = np.hstack([keypoints_np, np.ones((keypoints_np.shape[0], 1))])
+                
+                # Create graph from keypoints (now keypoints_np is guaranteed to be N,3)
                 graph = create_pose_graph(keypoints_np)
                 if graph is not None:
                     frame_graphs.append(graph)
@@ -151,7 +158,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--model_path",
         type=str,
-        default=DEFAULT_MODEL_PATH,
+        default=DEFAULT_MODEL_PATH,  # Now from config
         help=f"Path to trained model (default: {DEFAULT_MODEL_PATH})",
     )
     parser.add_argument(
@@ -160,7 +167,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--output_file",
         type=str,
-        default=DEFAULT_OUTPUT_PATH,
+        default=DEFAULT_OUTPUT_PATH,  # Now from config
         help=f"Path to output JSON file (default: {DEFAULT_OUTPUT_PATH})",
     )
     parser.add_argument(
@@ -197,13 +204,13 @@ def load_model_and_threshold(
 
     # Create model with standard parameters
     model = ViolenceDetectionGNN(
-        in_channels=MODEL_IN_CHANNELS,
-        hidden_channels=MODEL_HIDDEN_CHANNELS,
-        transformer_heads=MODEL_TRANSFORMER_HEADS,
-        transformer_layers=MODEL_TRANSFORMER_LAYERS,
+        in_channels=MODEL_IN_CHANNELS,  # Now from config
+        hidden_channels=MODEL_HIDDEN_CHANNELS,  # Now from config
+        transformer_heads=MODEL_TRANSFORMER_HEADS,  # Now from config
+        transformer_layers=MODEL_TRANSFORMER_LAYERS,  # Now from config
     ).to(device)
 
-    # Default threshold if not found in model
+    # Default threshold if not found in model.
     DEFAULT_THRESHOLD = 0.5
 
     if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:

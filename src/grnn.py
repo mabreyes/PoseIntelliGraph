@@ -14,286 +14,14 @@ Key references:
 
 from typing import List, Optional
 
-import numpy as np
+# import numpy as np # No longer directly used in this file
 import torch
 import torch.nn as nn
-from torch_geometric.data import Data
+# from torch_geometric.data import Data # No longer directly used in this file
 from torch_geometric.nn import GCNConv, global_mean_pool
 
 
-def create_pose_graph(keypoints: np.ndarray, edge_attr: bool = True) -> Optional[Data]:
-    """
-    Convert keypoints into a graph representation for GNN processing.
-
-    This enhanced implementation uses ALL available keypoints including body, face,
-    and hands to create a comprehensive graph representation of human pose.
-
-    The graph structure is based on anatomical connections of the human body:
-    - Body connections (17 main keypoints)
-    - Face keypoints (68 facial landmarks)
-    - Hand keypoints (21 keypoints per hand)
-
-    Connections are created both within each component (body, face, hands) and between
-    them to ensure the graph captures the complete structural relationships.
-
-    Args:
-        keypoints: NumPy array containing (x, y) coordinates of all keypoints
-        edge_attr: Whether to include edge attributes (distances between joints)
-
-    Returns:
-        PyTorch Geometric Data object or None if the graph cannot be created
-    """
-    # Filter out any invalid keypoints (indicated by zeros or NaNs)
-    valid_mask = ~np.isnan(keypoints).any(axis=1) & (keypoints != 0).any(axis=1)
-    valid_keypoints = keypoints[valid_mask]
-    valid_indices = np.where(valid_mask)[0]
-
-    if len(valid_keypoints) < 3:  # Need at least 3 points for a meaningful graph
-        return None
-
-    num_nodes = len(valid_keypoints)
-
-    # Node features are the 2D coordinates
-    x = torch.tensor(valid_keypoints, dtype=torch.float)
-
-    # Create edges based on anatomical connections
-    edge_list = []
-    edge_features = []
-
-    # Map from original indices to valid indices for creating edges
-    index_map = {orig_idx: new_idx for new_idx, orig_idx in enumerate(valid_indices)}
-
-    # Define connections for body keypoints (COCO-WholeBody format)
-    # Main body connections (17 keypoints)
-    body_connections = [
-        (0, 1),
-        (0, 2),
-        (1, 3),
-        (2, 4),  # Face connections
-        (5, 7),
-        (7, 9),
-        (6, 8),
-        (8, 10),  # Arms
-        (5, 6),
-        (5, 11),
-        (6, 12),
-        (11, 12),  # Shoulders and hips
-        (11, 13),
-        (13, 15),
-        (12, 14),
-        (14, 16),  # Legs
-        (0, 5),
-        (0, 6),  # Neck to shoulders
-    ]
-
-    # Face connections (connect each point to the next and to the center)
-    # From keypoint index 23 to 90
-    face_center = 0  # Nose is the center of the face
-    face_contour_start, face_contour_end = 23, 90
-
-    # Hand connections
-    # Left hand: 91-111, Right hand: 112-132
-    left_hand_root = 91
-    right_hand_root = 112
-    # These are now used in creating connections
-
-    # Connect face to body
-    face_to_body = [(0, face_contour_start)]  # Nose to first face keypoint
-
-    # Connect hands to body
-    left_hand_to_body = [(9, left_hand_root)]  # Left wrist to left hand root
-    right_hand_to_body = [(10, right_hand_root)]  # Right wrist to right hand root
-
-    # Add all defined connections
-    for connections in [
-        body_connections,
-        face_to_body,
-        left_hand_to_body,
-        right_hand_to_body,
-    ]:
-        for src, dst in connections:
-            if src in index_map and dst in index_map:
-                # Add bidirectional edges
-                edge_list.append([index_map[src], index_map[dst]])
-                edge_list.append([index_map[dst], index_map[src]])
-
-                if edge_attr:
-                    # Compute distance between joints as edge feature
-                    dist = np.linalg.norm(
-                        valid_keypoints[index_map[src]]
-                        - valid_keypoints[index_map[dst]]
-                    )
-                    edge_features.append([dist])
-                    edge_features.append([dist])  # Same feature for both directions
-
-    # Connect face keypoints (if present)
-    face_indices = [
-        i for i in range(face_contour_start, face_contour_end + 1) if i in index_map
-    ]
-
-    # Connect each face point to the next
-    for i in range(len(face_indices) - 1):
-        src, dst = face_indices[i], face_indices[i + 1]
-        # Add bidirectional edges
-        edge_list.append([index_map[src], index_map[dst]])
-        edge_list.append([index_map[dst], index_map[src]])
-
-        if edge_attr:
-            # Compute distance between joints as edge feature
-            dist = np.linalg.norm(
-                valid_keypoints[index_map[src]] - valid_keypoints[index_map[dst]]
-            )
-            edge_features.append([dist])
-            edge_features.append([dist])  # Same feature for both directions
-
-    # Connect face points to nose (if both exist)
-    if face_center in index_map:
-        for face_idx in face_indices:
-            # Add bidirectional edges
-            edge_list.append([index_map[face_center], index_map[face_idx]])
-            edge_list.append([index_map[face_idx], index_map[face_center]])
-
-            if edge_attr:
-                # Compute distance between joints as edge feature
-                dist = np.linalg.norm(
-                    valid_keypoints[index_map[face_center]]
-                    - valid_keypoints[index_map[face_idx]]
-                )
-                edge_features.append([dist])
-                edge_features.append([dist])  # Same feature for both directions
-
-    # Connect hand keypoints (if present)
-    # Use the hand indices but don't store in an unused variable
-
-    # Define finger connections for better structure
-    left_thumb = [91, 92, 93, 94, 95]  # Root to tip
-    left_index = [91, 96, 97, 98, 99]
-    left_middle = [91, 100, 101, 102, 103]
-    left_ring = [91, 104, 105, 106, 107]
-    left_pinky = [91, 108, 109, 110, 111]
-
-    left_fingers = [left_thumb, left_index, left_middle, left_ring, left_pinky]
-
-    # Connect each finger joint to the next
-    for finger in left_fingers:
-        for i in range(len(finger) - 1):
-            src, dst = finger[i], finger[i + 1]
-            if src in index_map and dst in index_map:
-                # Add bidirectional edges
-                edge_list.append([index_map[src], index_map[dst]])
-                edge_list.append([index_map[dst], index_map[src]])
-
-                if edge_attr:
-                    # Compute distance between joints as edge feature
-                    dist = np.linalg.norm(
-                        valid_keypoints[index_map[src]]
-                        - valid_keypoints[index_map[dst]]
-                    )
-                    edge_features.append([dist])
-                    edge_features.append([dist])
-
-    # Connect finger bases to each other for left hand
-    finger_bases = [92, 96, 100, 104, 108]  # Base of each finger
-    for i in range(len(finger_bases) - 1):
-        src, dst = finger_bases[i], finger_bases[i + 1]
-        if src in index_map and dst in index_map:
-            # Add bidirectional edges
-            edge_list.append([index_map[src], index_map[dst]])
-            edge_list.append([index_map[dst], index_map[src]])
-
-            if edge_attr:
-                # Compute distance between joints as edge feature
-                dist = np.linalg.norm(
-                    valid_keypoints[index_map[src]] - valid_keypoints[index_map[dst]]
-                )
-                edge_features.append([dist])
-                edge_features.append([dist])
-
-    # Right hand
-    right_thumb = [112, 113, 114, 115, 116]  # Root to tip
-    right_index = [112, 117, 118, 119, 120]
-    right_middle = [112, 121, 122, 123, 124]
-    right_ring = [112, 125, 126, 127, 128]
-    right_pinky = [112, 129, 130, 131, 132]
-
-    right_fingers = [right_thumb, right_index, right_middle, right_ring, right_pinky]
-
-    # Connect each finger joint to the next for right hand
-    for finger in right_fingers:
-        for i in range(len(finger) - 1):
-            src, dst = finger[i], finger[i + 1]
-            if src in index_map and dst in index_map:
-                # Add bidirectional edges
-                edge_list.append([index_map[src], index_map[dst]])
-                edge_list.append([index_map[dst], index_map[src]])
-
-                if edge_attr:
-                    # Compute distance between joints as edge feature
-                    dist = np.linalg.norm(
-                        valid_keypoints[index_map[src]]
-                        - valid_keypoints[index_map[dst]]
-                    )
-                    edge_features.append([dist])
-                    edge_features.append([dist])
-
-    # Connect finger bases to each other for right hand
-    finger_bases = [113, 117, 121, 125, 129]  # Base of each finger
-    for i in range(len(finger_bases) - 1):
-        src, dst = finger_bases[i], finger_bases[i + 1]
-        if src in index_map and dst in index_map:
-            # Add bidirectional edges
-            edge_list.append([index_map[src], index_map[dst]])
-            edge_list.append([index_map[dst], index_map[src]])
-
-            if edge_attr:
-                # Compute distance between joints as edge feature
-                dist = np.linalg.norm(
-                    valid_keypoints[index_map[src]] - valid_keypoints[index_map[dst]]
-                )
-                edge_features.append([dist])
-                edge_features.append([dist])
-
-    # Fully connect sparse regions for better message passing
-    if len(edge_list) < 2 * num_nodes:  # If too few edges compared to nodes
-        # Add edges to ensure connectivity
-        for i in range(num_nodes):
-            for j in range(i + 1, num_nodes):
-                if [i, j] not in edge_list:
-                    # Add bidirectional edges
-                    edge_list.append([i, j])
-                    edge_list.append([j, i])
-
-                    if edge_attr:
-                        # Compute distance as edge feature
-                        dist = np.linalg.norm(valid_keypoints[i] - valid_keypoints[j])
-                        edge_features.append([dist])
-                        edge_features.append([dist])
-
-    if not edge_list:
-        # If no edges were created, create a fully connected graph
-        for i in range(num_nodes):
-            for j in range(i + 1, num_nodes):
-                # Add bidirectional edges
-                edge_list.append([i, j])
-                edge_list.append([j, i])
-
-                if edge_attr:
-                    # Compute distance as edge feature
-                    dist = np.linalg.norm(valid_keypoints[i] - valid_keypoints[j])
-                    edge_features.append([dist])
-                    edge_features.append([dist])
-
-    # Create PyTorch Geometric Data object
-    edge_index = torch.tensor(edge_list, dtype=torch.long).t().contiguous()
-
-    # Create graph object
-    data = Data(x=x, edge_index=edge_index)
-
-    # Add edge features if requested
-    if edge_attr and edge_features:
-        data.edge_attr = torch.tensor(edge_features, dtype=torch.float)
-
-    return data
+# create_pose_graph function has been moved to src.graph_utils
 
 
 class GraphRNNCell(nn.Module):
@@ -317,7 +45,7 @@ class GraphRNNCell(nn.Module):
             input_dim: Dimension of input node features
             hidden_dim: Dimension of hidden state
         """
-        super(GraphRNNCell, self).__init__()
+        super().__init__()
 
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -470,7 +198,7 @@ class GRNN(nn.Module):
             dropout: Dropout rate between layers
             bidirectional: Whether to use bidirectional processing
         """
-        super(GRNN, self).__init__()
+        super().__init__()
 
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -655,7 +383,7 @@ class ViolenceDetectionGRNN(nn.Module):
             dropout: Dropout rate for regularization
             bidirectional: Whether to use bidirectional GRNN
         """
-        super(ViolenceDetectionGRNN, self).__init__()
+        super().__init__()
 
         # GRNN component for spatial-temporal processing
         self.grnn = GRNN(
