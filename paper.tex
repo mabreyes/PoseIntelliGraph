@@ -54,8 +54,8 @@ With the exponential growth of video data across social media, surveillance
 systems, and streaming platforms, there is an increasing need for reliable
 automated methods to identify potentially harmful content
 \cite{demarty2014violent}. Traditional approaches have primarily relied on
-appearance-based features extracted from RGB video frames, employing
-convolutional neural networks (CNNs) to classify violent actions
+appearance-based features extracted from RGB video frames, using convolutional
+neural networks (CNNs) to classify violent actions
 \cite{sudhakaran2017learning}. However, these methods often struggle with
 generalization across different environments, lighting conditions, and camera
 angles.
@@ -82,7 +82,7 @@ capture temporal dependencies in pose sequences.
 Despite these advances, existing research has insufficiently explored the
 integration of GNNs and Transformers for violence detection from human pose
 data. Most prior work has either utilized GNNs alone \cite{yan2018spatial} or
-employed more traditional sequence models such as recurrent neural networks
+used more traditional sequence models such as recurrent neural networks
 \cite{li2019actional}. Furthermore, many approaches have focused on simple
 graph architectures that fail to fully leverage the different types of graph
 convolutions available, each with their unique strengths in capturing different
@@ -305,7 +305,7 @@ This robust graph construction is critical for downstream analysis since the
 quality of the graph representation directly impacts model performance.
 
 \subsection{Multi-Layer GNN Component}
-Our GNN component employs three specialized layers, each addressing different
+Our GNN component uses three specialized layers, each addressing different
 aspects of graph structure learning:
 
 \begin{enumerate}
@@ -394,7 +394,7 @@ stability.
     \label{fig:gnn_layers}
 \end{figure*}
 
-We also employ JumpingKnowledge connections \cite{xu2018representation} to
+We also use JumpingKnowledge connections \cite{xu2018representation} to
 preserve information from earlier layers, which helps capture multi-scale
 structural patterns:
 
@@ -561,7 +561,7 @@ The dataset presents several challenges that make violence detection difficult:
     \item \textbf{Complex interactions}: Violence often involves multiple people in close proximity.
 \end{itemize}
 
-To address these challenges, we employed stratified sampling during dataset
+To address these challenges, we used stratified sampling during dataset
 splitting and applied data augmentation techniques such as random rotation,
 scaling, and flipping to pose keypoints.
 

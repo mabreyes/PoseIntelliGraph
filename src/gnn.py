@@ -5,6 +5,7 @@ Graph Neural Network component for the violence detection system.
 This module contains the GNN model that processes human pose data
 represented as graphs.
 """
+
 from typing import Optional
 
 import numpy as np

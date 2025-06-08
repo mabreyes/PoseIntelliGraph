@@ -84,8 +84,13 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "W", "I"]
+select = ["E", "F", "B", "W", "I", "F401"]
 ignore = []
+fixable = ["F401"]
+unfixable = []
+
+[tool.ruff.lint.pyflakes]
+# Configuration for pyflakes unused import detection
 
 [tool.pytest.ini_options]
 minversion = "6.0"
