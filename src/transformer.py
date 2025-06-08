@@ -5,6 +5,7 @@ Transformer component for the violence detection system.
 This module contains the transformer model that processes embeddings
 from the GNN before final classification.
 """
+
 from typing import Optional
 
 import torch

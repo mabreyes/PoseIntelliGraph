@@ -8,6 +8,7 @@ It includes:
 - Device detection for optimal hardware utilization
 - ViolenceDetectionGNN model that combines GNN and Transformer processing
 """
+
 from __future__ import annotations
 
 import torch

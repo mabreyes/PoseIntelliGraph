@@ -8,6 +8,7 @@ scores from human pose data in MMPose JSON format. It provides:
 - Score interpretation based on configurable thresholds
 - Detailed per-frame analytics and overall statistics
 """
+
 from __future__ import annotations
 
 import argparse
